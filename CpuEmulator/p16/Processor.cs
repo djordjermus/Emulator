@@ -29,7 +29,7 @@ namespace CpuEmulator.p16 {
             ushort len = (ushort)EncDec.Decode(Memory, _reg[IX_PC], out instruction);
 
             // FAILIURE TO READ INSTRUCTION
-            if (len == 0) 
+            if (len == 0)
                 return Interrupt.badPcValue; 
 
             // MOVE PC
@@ -112,9 +112,10 @@ namespace CpuEmulator.p16 {
             }
             return Interrupt.none;
         }
+        
         // Executes decomposed instruction
         // !!!Does not handle interrupt!!!
-        private Interrupt Execute(
+        public Interrupt Execute(
             OpCode opcode, uint opcount,
             ushort v1, ushort v2, ushort v3) {
 

@@ -6,41 +6,36 @@ using System.Threading.Tasks;
 
 namespace CpuEmulator.p16 {
     public partial class Processor {
-        Interrupt Load(OpCode code, ushort reg, ushort value) {
-            if (!ValidRegister(reg)) return Interrupt.badRegister;
+        Interrupt Load(OpCode code, ushort r1, ushort v2) {
+            if (!ValidRegister(r1)) return Interrupt.badRegister;
             
-            bool successfull;
             switch (code) {
                 case OpCode.load:
-                    successfull = Set(reg, value);
-                    break;
+                    return Set(r1, v2) ? Interrupt.none : Interrupt.badRegister;
 
                 case OpCode.loadub:
-                    successfull = Set(reg, (ushort)(byte)value);
-                    break;
+                    return Set(r1, (ushort)(byte)v2) ? Interrupt.none : Interrupt.badRegister;
 
                 case OpCode.loadsb:
-                    successfull = Set(reg, (ushort)(sbyte)value);
-                    break;
+                    return Set(r1, (ushort)(sbyte)v2) ? Interrupt.none : Interrupt.badRegister;
 
                 default:
                     return Interrupt.badInstruction;
             }
-            return successfull ? Interrupt.none : Interrupt.badRegister;
         }
-        Interrupt Store(OpCode code, ushort address, ushort value) {
+        Interrupt Store(OpCode code, ushort a1, ushort v2) {
             uint wr = 0;
             switch (code) {
                 case OpCode.store:
-                    wr = Memory.Write(address, value);
+                    wr = Memory.Write(a1, v2);
                     break;
 
                 case OpCode.storelb:
-                    wr = Memory.Write(address, (byte)(value >> 0));
+                    wr = Memory.Write(a1, (byte)(v2 >> 0));
                     break;
 
                 case OpCode.storehb:
-                    wr = Memory.Write(address, (byte)(value >> 8));
+                    wr = Memory.Write(a1, (byte)(v2 >> 8));
                     break;
 
                 default:
@@ -48,19 +43,19 @@ namespace CpuEmulator.p16 {
             }
             return (wr != 0) ? Interrupt.none : Interrupt.badAddress;
         }
-        Interrupt Push(OpCode code, ushort value) {
+        Interrupt Push(OpCode code, ushort v1) {
             uint add = 0;
             switch (code) {
                 case OpCode.push:
-                    add = Memory.Write(_reg[IX_SP], value);
+                    add = Memory.Write(_reg[IX_SP], v1);
                     break;
 
                 case OpCode.pushhb:
-                    add = Memory.Write(_reg[IX_SP], (byte)(value >> 8));
+                    add = Memory.Write(_reg[IX_SP], (byte)(v1 >> 8));
                     break;
 
                 case OpCode.pushlb:
-                    add = Memory.Write(_reg[IX_SP], (byte)(value >> 0));
+                    add = Memory.Write(_reg[IX_SP], (byte)(v1 >> 0));
                     break;
 
                 default:
@@ -74,8 +69,8 @@ namespace CpuEmulator.p16 {
 
             return Interrupt.none;
         }
-        Interrupt Pop(OpCode code, ushort reg) {
-            if(!ValidRegister(reg)) return Interrupt.badRegister;
+        Interrupt Pop(OpCode code, ushort r1) {
+            if(!ValidRegister(r1)) return Interrupt.badRegister;
 
             uint   sub  = 0;
             ushort read = 0;
@@ -83,17 +78,17 @@ namespace CpuEmulator.p16 {
             switch (code) {
                 case OpCode.pop: 
                     sub = Memory.Read(this[IX_SP], out read);
-                    Set(reg, read);
+                    Set(r1, read);
                     break;
 
                 case OpCode.popub:
                     sub = Memory.Read(this[IX_SP], out read);
-                    Set(reg, (ushort)read);
+                    Set(r1, (ushort)read);
                     
                     break;
                 case OpCode.popsb:
                     sub = Memory.Read(this[IX_SP], out read);
-                    Set(reg, (ushort)(short)read);
+                    Set(r1, (ushort)(short)read);
                     break;
 
                 default:
@@ -106,24 +101,31 @@ namespace CpuEmulator.p16 {
             if (_reg[IX_SP] > _reg[IX_SB]) return Interrupt.stackunderflow;
             return Interrupt.none;
         }
-        Interrupt Arithmetic(OpCode code, ushort reg, ushort lhs, ushort rhs, ushort opct) {
-            if (!ValidRegister(reg)) return Interrupt.badRegister;
+        Interrupt Arithmetic(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+            if (!ValidRegister(r1)) return Interrupt.badRegister;
+
+            Convert(opct, ref r1, ref v2, ref v3);
+
             switch (code) {
                 case OpCode.add:
-                    Set(reg, (ushort)(lhs + rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 + v3));
                     break;
 
                 case OpCode.sub:
-                    Set(reg, (ushort)(lhs - rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 - v3));
                     break;
 
                 case OpCode.mul:
-                    Set(reg, (ushort)(lhs * rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 * v3));
                     break;
 
                 case OpCode.div:
-                    if (rhs == 0) return Interrupt.badArithmetics; // DIV BY ZERO
-                    Set(reg, (ushort)(lhs / rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    if (v3 == 0) return Interrupt.badArithmetics; // DIV BY ZERO
+                    Set(r1, (ushort)(v2 / v3));
                     break;
 
                 default:
@@ -131,110 +133,141 @@ namespace CpuEmulator.p16 {
             }
             return Interrupt.none;
         }
-        Interrupt Bitwise(OpCode code, ushort reg, ushort lhs, ushort rhs, ushort opct) {
-            if (!ValidRegister(reg)) return Interrupt.badRegister;
+        Interrupt Bitwise(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+            if (!ValidRegister(r1)) return Interrupt.badRegister;
+
+            Convert(opct, ref r1, ref v2, ref v3);
 
             switch (code) {
                 case OpCode.band:
-                    Set(reg, (ushort)(lhs & rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 & v3));
                     break;
                 case OpCode.bor:
-                    Set(reg, (ushort)(lhs | rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 | v3));
                     break;
                 case OpCode.bxor:
-                    Set(reg, (ushort)(lhs ^ rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 ^ v3));
                     break;
                 case OpCode.lsr:
-                    Set(reg, (ushort)(lhs >> rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 >> v3));
                     break;
                 case OpCode.lsl:
-                    Set(reg, (ushort)(lhs << rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, (ushort)(v2 << v3));
                     break;
                 case OpCode.binv:
-                    Set(reg, (ushort)~lhs);
+                    if (opct < 1) return Interrupt.badInstruction;
+                    Set(r1, (ushort)~v2);
                     break;
                 default:
                     return Interrupt.badInstruction;
             }
             return Interrupt.none;
         }
-        Interrupt Logical(OpCode code, ushort reg, ushort lhs, ushort rhs, ushort opct) {
-            if (!ValidRegister(reg)) return Interrupt.badRegister;
+        Interrupt Logical(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+            if (!ValidRegister(r1)) return Interrupt.badRegister;
+
+            Convert(opct, ref r1, ref v2, ref v3);
 
             switch (code) {
                 case OpCode.and:
-                    Set(reg, ToNum(ToBool(lhs) && ToBool(rhs)));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(ToBool(v2) && ToBool(v3)));
                     break;
                 case OpCode.or:
-                    Set(reg, ToNum(ToBool(lhs) || ToBool(rhs)));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(ToBool(v2) || ToBool(v3)));
                     break;
                 case OpCode.xor:
-                    Set(reg, ToNum(
-                         (ToBool(lhs) || ToBool(rhs)) &&
-                        !(ToBool(lhs) && ToBool(rhs))));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(
+                         (ToBool(v2) || ToBool(v3)) &&
+                        !(ToBool(v2) && ToBool(v3))));
                     break;
                 case OpCode.not:
-                    Set(reg, ToNum(!ToBool(lhs)));
+                    if (opct < 1) return Interrupt.badInstruction;
+                    Set(r1, ToNum(!ToBool(v2)));
                     break;
                 default:
                     return Interrupt.badInstruction;
             }
             return Interrupt.none;
         }
-        Interrupt Comparison(OpCode code, ushort reg, ushort lhs, ushort rhs, ushort opct) {
-            if (!ValidRegister(reg)) return Interrupt.badRegister;
+        Interrupt Comparison(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+            if (!ValidRegister(r1)) return Interrupt.badRegister;
+
+            Convert(opct, ref r1, ref v2, ref v3);
 
             switch (code) {
                 case OpCode.eq:
-                    Set(reg, ToNum(lhs == rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(v2 == v3));
                     break;
                 case OpCode.neq:
-                    Set(reg, ToNum(lhs != rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(v2 != v3));
                     break;
                 case OpCode.ugt:
-                    Set(reg, ToNum(lhs > rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(v2 > v3));
                     break;
                 case OpCode.ult:
-                    Set(reg, ToNum(lhs < rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum(v2 < v3));
                     break;
                 case OpCode.sgt:
-                    Set(reg, ToNum((short)lhs > (short)rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum((short)v2 > (short)v3));
                     break;
                 case OpCode.slt:
-                    Set(reg, ToNum((short)lhs < (short)rhs));
+                    if (opct < 2) return Interrupt.badInstruction;
+                    Set(r1, ToNum((short)v2 < (short)v3));
                     break;
             }
             return Interrupt.none;
         }
-        Interrupt Jump(OpCode code, ushort addr, ushort lhs, ushort rhs, ushort opct) {
+        Interrupt Jump(OpCode code, ushort a1, ushort v2, ushort v3, ushort opct) {
             switch (code) {
                 case OpCode.jmp:
-                    Set(IX_PC, addr);
+                    if (opct < 1) return Interrupt.badInstruction;
+                    Set(IX_PC, a1);
                     break;
                 case OpCode.jeq:
-                    if (lhs == rhs)
-                        Set(IX_PC, addr);
+                    if (opct < 3) return Interrupt.badInstruction;
+                    if (v2 == v3)
+                        Set(IX_PC, a1);
                     break;
                 case OpCode.jne:
-                    if (lhs != rhs)
-                        Set(IX_PC, addr);
+                    if (opct < 3) return Interrupt.badInstruction;
+                    if (v2 != v3)
+                        Set(IX_PC, a1);
                     break;
 
                 case OpCode.rjmp:
-                    Set(IX_PC, (ushort)(this[IX_PC] + addr));
+                    if (opct < 1) return Interrupt.badInstruction;
+                    Set(IX_PC, (ushort)(this[IX_PC] + a1));
                     break;
                 case OpCode.rjeq:
-                    if (lhs == rhs)
-                        Set(IX_PC, (ushort)(this[IX_PC] + addr));
+                    if (opct < 3) return Interrupt.badInstruction;
+                    if (v2 == v3)
+                        Set(IX_PC, (ushort)(this[IX_PC] + a1));
                     break;
                 case OpCode.rjne:
-                    if (lhs != rhs)
-                        Set(IX_PC, (ushort)(this[IX_PC] + addr));
+                    if (opct < 3) return Interrupt.badInstruction;
+                    if (v2 != v3)
+                        Set(IX_PC, (ushort)(this[IX_PC] + a1));
                     break;
                 default:
                     return Interrupt.badInstruction;
             }
             return Interrupt.none;
+        }
+        void Convert(ushort opct, ref ushort r1, ref ushort v2, ref ushort v3) { 
+            if (opct == 2) { v3 = v2; Get(r1, out v2); }
         }
     }
 }

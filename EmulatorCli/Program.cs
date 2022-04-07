@@ -50,13 +50,19 @@ class Program {
         instructions[9] = EncoderDecoder.Invert(
             Mode.immediate, 9,
             Mode.register,  0);
+        uint encAddr = 0;
 
+        // Enocode instructions 
         for (int i = 0; i < instructions.Length; i++)
-            processor.Execute(ref instructions[i]);
+            encAddr += EncoderDecoder.Encode(memory, encAddr, ref instructions[i]);
+
+        // Execute instructions
+        for (int i = 0; i < instructions.Length; i++) {
+            processor.Execute();
+        }
 
         Console.WriteLine("Done");
-    } // MAIN(STRING[] ARGS) END
 
-
+    }
 
 }

@@ -224,7 +224,7 @@ namespace EmulatorGui {
             ushort a = 12;
             ushort b = 5;
 
-            instructions[0] = EncoderDecoder.LoadUB(
+            instructions[0] = EncoderDecoder.Load(
                 Mode.immediate, 0,
                 Mode.immediate, a);
             instructions[1] = EncoderDecoder.Load(
@@ -269,8 +269,7 @@ namespace EmulatorGui {
                     Mode.immediate, (ushort)(1024 + 2 * i),
                     Mode.register, (ushort)(2 + i));
 
-            instructions[18] = EncoderDecoder.Divide(
-                Mode.immediate, 65535,
+            instructions[18] = EncoderDecoder.Jump(
                 Mode.immediate, 0);
 
             // Enocode instructions 

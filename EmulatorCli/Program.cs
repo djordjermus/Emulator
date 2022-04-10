@@ -5,12 +5,9 @@ class Program {
         Memory    memory           = new Memory(8192);
         Processor processor        = new Processor(memory);
         Instruction[] instructions = new Instruction[64];
-        ushort a = 0;
-        ushort b = 0;
-        unchecked {
-            a = (ushort)12;
-            b = (ushort)5;
-        }
+        ushort a = 12;
+        ushort b = 5;
+
         instructions[0] = EncoderDecoder.LoadUB(
             Mode.immediate, 0, 
             Mode.immediate, a);
@@ -50,6 +47,11 @@ class Program {
         instructions[9] = EncoderDecoder.Invert(
             Mode.immediate, 9,
             Mode.register,  0);
+
+        for (int i = 0; i < 8; i++) 
+            instructions[10 + i] = EncoderDecoder.Store(
+                Mode.immediate, (ushort)(1024 + 2 * i),
+                Mode.register, (ushort)(2 + i));
         uint encAddr = 0;
 
         // Enocode instructions 
@@ -58,7 +60,8 @@ class Program {
 
         // Execute instructions
         for (int i = 0; i < instructions.Length; i++) {
-            processor.Execute();
+            Interrupt trap = processor.Execute();
+            if(trap != Interrupt.none) Console.WriteLine(trap.ToString());
         }
 
         Console.WriteLine("Done");

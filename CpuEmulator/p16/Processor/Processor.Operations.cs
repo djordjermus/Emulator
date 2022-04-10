@@ -266,6 +266,7 @@ namespace CpuEmulator.p16 {
             }
             return Interrupt.none;
         }
+        
         void Convert(ushort opct, ref ushort r1, ref ushort v2, ref ushort v3) { 
             if (opct == 2) { v3 = v2; Get(r1, out v2); }
         }

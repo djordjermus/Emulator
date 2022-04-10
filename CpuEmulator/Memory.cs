@@ -210,6 +210,22 @@ namespace CpuEmulator {
             return written;
         }
 
+        public void Resize(uint newSize) { 
+
+            // Create new buffer
+            byte[] newData = new byte[newSize];
+
+            // Copy memory from old buffer
+            uint addr = 0;
+            while (addr < newSize && addr < Capacity) {
+                newData[addr] = _data[addr];
+                addr++;
+            }
+
+            // Assign buffer
+            _data = newData;
+        }
+
         byte[]        _data;
         WriteCallback _callback = (x, y) => { };
     }

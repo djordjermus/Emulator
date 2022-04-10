@@ -37,6 +37,7 @@ namespace CpuEmulator.p16 {
 
             return Interrupt.none;
         }
+        
         // Evaluates single operand
         // !!!Does not handle interrupt!!!
         public Interrupt Evaluate(Mode mode, ushort op, out ushort value) {
@@ -75,6 +76,7 @@ namespace CpuEmulator.p16 {
             }
             return Interrupt.badInstruction;
         }
+        
         // Decomposes instruction and evaluates its operands
         // !!!Does not handle interrupt!!!
         public Interrupt Decompose(
@@ -131,29 +133,25 @@ namespace CpuEmulator.p16 {
                 case OpCode.load:
                 case OpCode.loadsb:
                 case OpCode.loadub:
-                    Load(opcode, v1, v2);
-                    break;
+                    return Load(opcode, v1, v2);
 
                 // LOAD ADR VAL
                 case OpCode.store:
                 case OpCode.storehb:
                 case OpCode.storelb:
-                    Store(opcode, v1, v2);
-                    break;
+                    return Store(opcode, v1, v2);
 
                 // PUSH VAL
                 case OpCode.push:
                 case OpCode.pushhb:
                 case OpCode.pushlb:
-                    Push(opcode, v1);
-                    break;
+                    return Push(opcode, v1);
 
                 // POP REG
                 case OpCode.pop:
                 case OpCode.popub:
                 case OpCode.popsb:
-                    Pop(opcode, v1);
-                    break;
+                    return Pop(opcode, v1);
 
                 // - - - - - - - - - - - - - - - - - - -
                 // A R I T H M E T I C- - - - - - - - -
@@ -164,9 +162,7 @@ namespace CpuEmulator.p16 {
                 case OpCode.mul:
                 case OpCode.div:
                 // ___ REG VAL / ___ REG VAL VAL
-                    Arithmetic(opcode, v1, v2, v3, (ushort)opcount);
-                    
-                    break;
+                    return Arithmetic(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - 
                 // B I T W I S E- - - - - - 
@@ -179,8 +175,7 @@ namespace CpuEmulator.p16 {
                 case OpCode.lsr:
                 case OpCode.binv:
                 // ___ REG VAL / REG VAL VAL
-                    Bitwise(opcode, v1, v2, v3, (ushort)opcount);
-                    break;
+                    return Bitwise(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - 
                 // L O G I C A L- - - - - - 
@@ -190,8 +185,7 @@ namespace CpuEmulator.p16 {
                 case OpCode.or:
                 case OpCode.xor:
                 case OpCode.not:
-                    Logical(opcode, v1, v2, v3, (ushort)opcount);
-                    break;
+                    return Logical(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - - - -
                 // C O M P A R I S O N- - - - - - 
@@ -204,17 +198,15 @@ namespace CpuEmulator.p16 {
                 case OpCode.sgt:
                 case OpCode.slt:
                 // ___ REG VAL / ___ REG VAL VAL
-                    Comparison(opcode, v1, v2, v3, (ushort)opcount);
+                    return Comparison(opcode, v1, v2, v3, (ushort)opcount);
                     
-                    break;
                 case OpCode.jmp:  // ADDR
                 case OpCode.rjmp: // ADDR
                 case OpCode.jeq:  // ADDR LHS RHS
                 case OpCode.jne:  // ADDR LHS RHS
                 case OpCode.rjeq: // ADDR LHS RHS
                 case OpCode.rjne: // ADDR LHS RHS
-                    Jump(opcode, v1, v2, v3, (ushort)opcount);
-                    break;
+                    return Jump(opcode, v1, v2, v3, (ushort)opcount);
 
                 default:
                     return Interrupt.badInstruction;

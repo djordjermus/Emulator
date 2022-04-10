@@ -7,15 +7,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CpuEmulator.p16;
+namespace EmulatorGui {
+    public partial class InstructionViewForm : Form {
+        Processor         _processor;
 
-namespace EmulatorGui
-{
-    public partial class InstructionViewForm : Form
-    {
-        public InstructionViewForm() {
+        public InstructionViewForm(Processor processor) {
+            _processor = processor;
             InitializeComponent();
-            for (int i = 0; i < 256; i++) 
-                lbInstructions.Items.Add("0000: STORELB h0000 h0000 h0000");
+            RefreshValues();
+        }
+        public void RefreshValues() {
+            _processor.Get(Processor.IX_PC, out ushort addr);
+            lbInstructions.DataSource = 
+                InstructionView.CreateViews(_processor.Memory, addr, 32);
+        }
+
+        private void InstructionViewForm_FormClosing(object sender, FormClosingEventArgs e) {
+            if (e.CloseReason == CloseReason.UserClosing) {
+                e.Cancel = true;
+                Hide();
+            }
         }
     }
 }

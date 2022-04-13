@@ -6,24 +6,32 @@ using System.Threading.Tasks;
 
 namespace CpuEmulator.p16 {
     public partial class Processor {
-        Interrupt Load(OpCode code, ushort r1, ushort v2) {
+        Interrupt OpLoad(OpCode code, ushort r1, ushort v2) {
             if (!ValidRegister(r1)) return Interrupt.badRegister;
-            
+            bool success = false;
             switch (code) {
                 case OpCode.load:
-                    return Set(r1, v2) ? Interrupt.none : Interrupt.badRegister;
+                    success = Set(r1, v2);
+                    break;
 
                 case OpCode.loadub:
-                    return Set(r1, (ushort)(byte)v2) ? Interrupt.none : Interrupt.badRegister;
+                    success = Set(r1, (ushort)(byte)v2);
+                    break;
 
                 case OpCode.loadsb:
-                    return Set(r1, (ushort)(sbyte)v2) ? Interrupt.none : Interrupt.badRegister;
+                    success = Set(r1, (ushort)(sbyte)v2);
+                    break;
 
                 default:
                     return Interrupt.badInstruction;
             }
+            if (success) { 
+                _onExecute();
+                return Interrupt.none;
+            } 
+            else return Interrupt.badRegister;
         }
-        Interrupt Store(OpCode code, ushort a1, ushort v2) {
+        Interrupt OpStore(OpCode code, ushort a1, ushort v2) {
             uint wr = 0;
             switch (code) {
                 case OpCode.store:
@@ -41,9 +49,13 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
-            return (wr != 0) ? Interrupt.none : Interrupt.badAddress;
+            if (wr != 0) {
+                _onExecute();
+                return Interrupt.none;
+            }
+            return Interrupt.badAddress;
         }
-        Interrupt Push(OpCode code, ushort v1) {
+        Interrupt OpPush(OpCode code, ushort v1) {
             uint add = 0;
             switch (code) {
                 case OpCode.push:
@@ -67,9 +79,10 @@ namespace CpuEmulator.p16 {
             Set(IX_SP, (ushort)(_reg[IX_SP] + add));
             if(_reg[IX_SP] > _reg[IX_SB]) return Interrupt.stackoverflow;
 
+            _onExecute();
             return Interrupt.none;
         }
-        Interrupt Pop(OpCode code, ushort r1) {
+        Interrupt OpPop(OpCode code, ushort r1) {
             if(!ValidRegister(r1)) return Interrupt.badRegister;
 
             uint   sub  = 0;
@@ -99,9 +112,11 @@ namespace CpuEmulator.p16 {
             // MOVE STACK POINTER
             Set(IX_SP, (ushort)(_reg[IX_SP] - sub));
             if (_reg[IX_SP] > _reg[IX_SB]) return Interrupt.stackunderflow;
+
+            _onExecute();
             return Interrupt.none;
         }
-        Interrupt Arithmetic(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+        Interrupt OpArithmetic(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
             if (!ValidRegister(r1)) return Interrupt.badRegister;
 
             Convert(opct, ref r1, ref v2, ref v3);
@@ -131,9 +146,10 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
+            _onExecute();
             return Interrupt.none;
         }
-        Interrupt Bitwise(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+        Interrupt OpBitwise(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
             if (!ValidRegister(r1)) return Interrupt.badRegister;
 
             Convert(opct, ref r1, ref v2, ref v3);
@@ -166,9 +182,10 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
+            _onExecute();
             return Interrupt.none;
         }
-        Interrupt Logical(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+        Interrupt OpLogical(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
             if (!ValidRegister(r1)) return Interrupt.badRegister;
 
             Convert(opct, ref r1, ref v2, ref v3);
@@ -195,9 +212,10 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
+            _onExecute();
             return Interrupt.none;
         }
-        Interrupt Comparison(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
+        Interrupt OpComparison(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
             if (!ValidRegister(r1)) return Interrupt.badRegister;
 
             Convert(opct, ref r1, ref v2, ref v3);
@@ -228,9 +246,10 @@ namespace CpuEmulator.p16 {
                     Set(r1, ToNum((short)v2 < (short)v3));
                     break;
             }
+            _onExecute();
             return Interrupt.none;
         }
-        Interrupt Jump(OpCode code, ushort a1, ushort v2, ushort v3, ushort opct) {
+        Interrupt OpJump(OpCode code, ushort a1, ushort v2, ushort v3, ushort opct) {
             switch (code) {
                 case OpCode.jmp:
                     if (opct < 1) return Interrupt.badInstruction;
@@ -264,6 +283,7 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
+            _onExecute();
             return Interrupt.none;
         }
         

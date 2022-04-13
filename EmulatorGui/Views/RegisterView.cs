@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using CpuEmulator.p16;
 namespace EmulatorGui {
     public class RegisterView : IValueView {
+        static NumberFormat bin = BinaryFormat.Instance32;
+        static NumberFormat hex = HexadecimalFormat.Instance32;
+        static NumberFormat dec = DecimalFormat.Instance;
         public RegisterView(Processor processor, uint register) {
             Processor = processor;
             Register  = register;
@@ -40,17 +43,17 @@ namespace EmulatorGui {
             StringBuilder builder = new StringBuilder(20);
             // BINARY
             builder.Append(" b");
-            builder.Append(Utility.ToBin(value));
+            builder.Append(bin.To(value).Substring(16));
             
             // HEX
             builder.Append(" h");
-            builder.Append(value.ToString("X4"));
+            builder.Append(hex.To(value).Substring(4));
 
             builder.Append("; ");
 
             // Decimal
             builder.Append(' ');
-            builder.Append(value.ToString("00000"));
+            builder.Append(dec.To(value));
             return builder.ToString();
         }
 

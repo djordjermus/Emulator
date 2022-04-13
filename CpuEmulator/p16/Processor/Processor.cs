@@ -8,16 +8,20 @@ namespace CpuEmulator.p16 {
     using EncDec = EncoderDecoder;
     public partial class Processor {
         public delegate void SetCallback(uint registerIndex);
+        public delegate void ExecuteCallback();
 
         public Processor(Memory memory) {
             Memory = memory;
         }
         public Memory Memory { get; set; }
         public event SetCallback OnSet {
-            add    => _onSet += value;
-            remove => _onSet -= value;
+            add => _onSet += value;
+            remove => _onSet = (_onSet - value)!;
         }
-
+        public event ExecuteCallback OnExecute {
+            add => _onExecute += value;
+            remove => _onExecute = (_onExecute - value)!;
+        }
         // - - - - - - - - - - - - - - - - -
         // R E L E V A N T   C O D E- - - -
         // - - - - - - - - - - - - - - - -
@@ -30,14 +34,14 @@ namespace CpuEmulator.p16 {
 
             // FAILIURE TO READ INSTRUCTION
             if (len == 0)
-                return Interrupt.badPcValue; 
+                return Interrupt.badPcValue;
 
             // MOVE PC
             Set(IX_PC, (ushort)(_reg[IX_PC] + len));
 
             return Interrupt.none;
         }
-        
+
         // Evaluates single operand
         // !!!Does not handle interrupt!!!
         public Interrupt Evaluate(Mode mode, ushort op, out ushort value) {
@@ -50,25 +54,25 @@ namespace CpuEmulator.p16 {
                     return Interrupt.none;
 
                 case Mode.register:
-                    if (!ValidRegister(op)) 
+                    if (!ValidRegister(op))
                         return Interrupt.badRegister;
                     value = _reg[op];
 
                     return Interrupt.none;
 
                 case Mode.direct:
-                    if (!Memory.CanAccess(op + 1u)) 
+                    if (!Memory.CanAccess(op + 1u))
                         return Interrupt.badAddress;
                     value = Memory[op];
 
                     return Interrupt.none;
 
                 case Mode.registerDirect:
-                    if (!ValidRegister(op)) 
+                    if (!ValidRegister(op))
                         return Interrupt.badRegister;
                     uint addr = _reg[op];
 
-                    if (!Memory.CanAccess(addr + 1u)) 
+                    if (!Memory.CanAccess(addr + 1u))
                         return Interrupt.badAddress;
                     value = Memory[addr];
 
@@ -76,7 +80,7 @@ namespace CpuEmulator.p16 {
             }
             return Interrupt.badInstruction;
         }
-        
+
         // Decomposes instruction and evaluates its operands
         // !!!Does not handle interrupt!!!
         public Interrupt Decompose(
@@ -91,14 +95,14 @@ namespace CpuEmulator.p16 {
 
             Interrupt[] i = new Interrupt[3] { Interrupt.none, Interrupt.none, Interrupt.none };
 
-            if(opCount > 0)
+            if (opCount > 0)
                 i[0] = Evaluate(
-                    EncDec.GetMode1(ref instruction), 
+                    EncDec.GetMode1(ref instruction),
                     (ushort)instruction.Operand1, out value1);
             else value1 = 0;
-            if(opCount > 1)
+            if (opCount > 1)
                 i[1] = Evaluate(
-                    EncDec.GetMode2(ref instruction), 
+                    EncDec.GetMode2(ref instruction),
                     (ushort)instruction.Operand2, out value2);
             else value2 = 0;
             if (opCount > 2)
@@ -109,19 +113,19 @@ namespace CpuEmulator.p16 {
 
             // Validate that operators are properly evaluated
             foreach (Interrupt interrupt in i) {
-                if (interrupt != Interrupt.none) 
+                if (interrupt != Interrupt.none)
                     return interrupt;
             }
             return Interrupt.none;
         }
-        
+
         // Executes decomposed instruction
         // !!!Does not handle interrupt!!!
         public Interrupt Execute(
             OpCode opcode, uint opcount,
             ushort v1, ushort v2, ushort v3) {
 
-                switch (opcode) {
+            switch (opcode) {
                 case OpCode.noop:
                     return Interrupt.none;
 
@@ -133,25 +137,25 @@ namespace CpuEmulator.p16 {
                 case OpCode.load:
                 case OpCode.loadsb:
                 case OpCode.loadub:
-                    return Load(opcode, v1, v2);
+                    return OpLoad(opcode, v1, v2);
 
                 // LOAD ADR VAL
                 case OpCode.store:
                 case OpCode.storehb:
                 case OpCode.storelb:
-                    return Store(opcode, v1, v2);
+                    return OpStore(opcode, v1, v2);
 
                 // PUSH VAL
                 case OpCode.push:
                 case OpCode.pushhb:
                 case OpCode.pushlb:
-                    return Push(opcode, v1);
+                    return OpPush(opcode, v1);
 
                 // POP REG
                 case OpCode.pop:
                 case OpCode.popub:
                 case OpCode.popsb:
-                    return Pop(opcode, v1);
+                    return OpPop(opcode, v1);
 
                 // - - - - - - - - - - - - - - - - - - -
                 // A R I T H M E T I C- - - - - - - - -
@@ -161,8 +165,8 @@ namespace CpuEmulator.p16 {
                 case OpCode.sub:
                 case OpCode.mul:
                 case OpCode.div:
-                // ___ REG VAL / ___ REG VAL VAL
-                    return Arithmetic(opcode, v1, v2, v3, (ushort)opcount);
+                    // ___ REG VAL / ___ REG VAL VAL
+                    return OpArithmetic(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - 
                 // B I T W I S E- - - - - - 
@@ -174,8 +178,8 @@ namespace CpuEmulator.p16 {
                 case OpCode.lsl:
                 case OpCode.lsr:
                 case OpCode.binv:
-                // ___ REG VAL / REG VAL VAL
-                    return Bitwise(opcode, v1, v2, v3, (ushort)opcount);
+                    // ___ REG VAL / REG VAL VAL
+                    return OpBitwise(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - 
                 // L O G I C A L- - - - - - 
@@ -185,7 +189,7 @@ namespace CpuEmulator.p16 {
                 case OpCode.or:
                 case OpCode.xor:
                 case OpCode.not:
-                    return Logical(opcode, v1, v2, v3, (ushort)opcount);
+                    return OpLogical(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - - - -
                 // C O M P A R I S O N- - - - - - 
@@ -197,21 +201,20 @@ namespace CpuEmulator.p16 {
                 case OpCode.ult:
                 case OpCode.sgt:
                 case OpCode.slt:
-                // ___ REG VAL / ___ REG VAL VAL
-                    return Comparison(opcode, v1, v2, v3, (ushort)opcount);
-                    
+                    // ___ REG VAL / ___ REG VAL VAL
+                    return OpComparison(opcode, v1, v2, v3, (ushort)opcount);
+
                 case OpCode.jmp:  // ADDR
                 case OpCode.rjmp: // ADDR
                 case OpCode.jeq:  // ADDR LHS RHS
                 case OpCode.jne:  // ADDR LHS RHS
                 case OpCode.rjeq: // ADDR LHS RHS
                 case OpCode.rjne: // ADDR LHS RHS
-                    return Jump(opcode, v1, v2, v3, (ushort)opcount);
+                    return OpJump(opcode, v1, v2, v3, (ushort)opcount);
 
                 default:
                     return Interrupt.badInstruction;
             }
-            return Interrupt.none;
         }
 
         // Fetches, Decomposes, then executes instruction
@@ -233,7 +236,7 @@ namespace CpuEmulator.p16 {
             // - - - - - - - - - - - -
 
             interrupt = Decompose(
-                ref instruction, 
+                ref instruction,
                 out OpCode opcode, out uint opcount,
                 out ushort v1, out ushort v2, out ushort v3);
             if (interrupt != Interrupt.none) return interrupt;
@@ -244,25 +247,26 @@ namespace CpuEmulator.p16 {
             // - - - - - - - - - - -
 
             interrupt = Execute(
-                opcode, opcount, 
+                opcode, opcount,
                 v1, v2, v3);
             return interrupt;
         }
-        
+
         // Handles given interrupt if its valid
         // Returns true if interrupt is handled, otherwise false
         public bool HandleInterrupt(Interrupt i) {
-            if ((int)i >= IX_IRR0 && (int)i <= IX_IRR7) { 
+            if ((int)i >= IX_IRR0 && (int)i <= IX_IRR7) {
                 Set(IX_PC, _reg[(int)i]);
                 return true;
             }
             return false;
         }
-        
+
         public static bool ValidRegister(uint ix) => ix < 32;
         static bool ToBool(ushort val) => val != 0;
         static ushort ToNum(bool val) => val ? (ushort)1 : (ushort)0;
-        
+
         SetCallback _onSet = (x) => { };
+        ExecuteCallback _onExecute = () => {};
     }
 }

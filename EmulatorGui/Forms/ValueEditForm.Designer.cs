@@ -1,6 +1,6 @@
 ﻿namespace EmulatorGui
 {
-    partial class ViewEditForm
+    partial class ValueEditForm
     {
         /// <summary>
         /// Required designer variable.
@@ -59,23 +59,27 @@
             // 
             this.btnSet.Location = new System.Drawing.Point(204, 12);
             this.btnSet.Name = "btnSet";
-            this.btnSet.Size = new System.Drawing.Size(38, 23);
+            this.btnSet.Size = new System.Drawing.Size(68, 23);
             this.btnSet.TabIndex = 3;
-            this.btnSet.Text = "set";
+            this.btnSet.Text = "upiši";
             this.btnSet.UseVisualStyleBackColor = true;
             this.btnSet.Click += new System.EventHandler(this.btnSet_Click);
             // 
-            // ViewEditForm
+            // ValueEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(254, 51);
+            this.ClientSize = new System.Drawing.Size(284, 46);
             this.Controls.Add(this.btnSet);
             this.Controls.Add(this.cbBase);
             this.Controls.Add(this.tbValue);
             this.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Name = "ViewEditForm";
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "ValueEditForm";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.Text = "Izmeni vrednost";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ViewEditForm_FormClosing);
             this.ResumeLayout(false);

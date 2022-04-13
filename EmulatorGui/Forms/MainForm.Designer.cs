@@ -30,10 +30,10 @@
         {
             this.msTools = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.učitajToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.osvežiToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.sačuvajKaoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.sačuvajToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.msLoad = new System.Windows.Forms.ToolStripMenuItem();
+            this.msReload = new System.Windows.Forms.ToolStripMenuItem();
+            this.msSaveAs = new System.Windows.Forms.ToolStripMenuItem();
+            this.msSave = new System.Windows.Forms.ToolStripMenuItem();
             this.zaslugeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.đorđeRmušRT1419ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.btnStep = new System.Windows.Forms.Button();
@@ -62,6 +62,11 @@
             this.lbClearMemory = new System.Windows.Forms.Label();
             this.tbClearFrom = new System.Windows.Forms.TextBox();
             this.groupOptions = new System.Windows.Forms.GroupBox();
+            this.btnStopExec = new System.Windows.Forms.Button();
+            this.btnExecuteUntil = new System.Windows.Forms.Button();
+            this.lbStep = new System.Windows.Forms.Label();
+            this.lbExecuteUntil = new System.Windows.Forms.Label();
+            this.tbExecuteUntil = new System.Windows.Forms.TextBox();
             this.lbMemory = new System.Windows.Forms.ListBox();
             this.lbInstructions = new System.Windows.Forms.ListBox();
             this.msTools.SuspendLayout();
@@ -84,39 +89,43 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.učitajToolStripMenuItem,
-            this.osvežiToolStripMenuItem,
-            this.sačuvajKaoToolStripMenuItem,
-            this.sačuvajToolStripMenuItem});
+            this.msLoad,
+            this.msReload,
+            this.msSaveAs,
+            this.msSave});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(47, 22);
             this.fileToolStripMenuItem.Text = "Fajl";
             // 
-            // učitajToolStripMenuItem
+            // msLoad
             // 
-            this.učitajToolStripMenuItem.Name = "učitajToolStripMenuItem";
-            this.učitajToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.učitajToolStripMenuItem.Text = "Učitaj iz fajla";
+            this.msLoad.Name = "msLoad";
+            this.msLoad.Size = new System.Drawing.Size(180, 22);
+            this.msLoad.Text = "Učitaj iz fajla";
+            this.msLoad.Click += new System.EventHandler(this.btnLoadClick);
             // 
-            // osvežiToolStripMenuItem
+            // msReload
             // 
-            this.osvežiToolStripMenuItem.Enabled = false;
-            this.osvežiToolStripMenuItem.Name = "osvežiToolStripMenuItem";
-            this.osvežiToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.osvežiToolStripMenuItem.Text = "Osveži";
+            this.msReload.Enabled = false;
+            this.msReload.Name = "msReload";
+            this.msReload.Size = new System.Drawing.Size(180, 22);
+            this.msReload.Text = "Osveži";
+            this.msReload.Click += new System.EventHandler(this.msReload_Click);
             // 
-            // sačuvajKaoToolStripMenuItem
+            // msSaveAs
             // 
-            this.sačuvajKaoToolStripMenuItem.Name = "sačuvajKaoToolStripMenuItem";
-            this.sačuvajKaoToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.sačuvajKaoToolStripMenuItem.Text = "Sačuvaj kao";
+            this.msSaveAs.Name = "msSaveAs";
+            this.msSaveAs.Size = new System.Drawing.Size(180, 22);
+            this.msSaveAs.Text = "Sačuvaj kao";
+            this.msSaveAs.Click += new System.EventHandler(this.btnSaveAsClick);
             // 
-            // sačuvajToolStripMenuItem
+            // msSave
             // 
-            this.sačuvajToolStripMenuItem.Enabled = false;
-            this.sačuvajToolStripMenuItem.Name = "sačuvajToolStripMenuItem";
-            this.sačuvajToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.sačuvajToolStripMenuItem.Text = "Sačuvaj";
+            this.msSave.Enabled = false;
+            this.msSave.Name = "msSave";
+            this.msSave.Size = new System.Drawing.Size(180, 22);
+            this.msSave.Text = "Sačuvaj";
+            this.msSave.Click += new System.EventHandler(this.msSave_Click);
             // 
             // zaslugeToolStripMenuItem
             // 
@@ -135,10 +144,10 @@
             // 
             // btnStep
             // 
-            this.btnStep.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.btnStep.Location = new System.Drawing.Point(318, 483);
+            this.btnStep.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnStep.Location = new System.Drawing.Point(6, 377);
             this.btnStep.Name = "btnStep";
-            this.btnStep.Size = new System.Drawing.Size(100, 24);
+            this.btnStep.Size = new System.Drawing.Size(76, 22);
             this.btnStep.TabIndex = 1;
             this.btnStep.UseVisualStyleBackColor = true;
             this.btnStep.Click += new System.EventHandler(this.btnStep_Click);
@@ -158,7 +167,7 @@
             // lbSearch
             // 
             this.lbSearch.AutoSize = true;
-            this.lbSearch.Location = new System.Drawing.Point(14, 343);
+            this.lbSearch.Location = new System.Drawing.Point(10, 310);
             this.lbSearch.Name = "lbSearch";
             this.lbSearch.Size = new System.Drawing.Size(70, 14);
             this.lbSearch.TabIndex = 30;
@@ -166,7 +175,7 @@
             // 
             // tbResize
             // 
-            this.tbResize.Location = new System.Drawing.Point(6, 265);
+            this.tbResize.Location = new System.Drawing.Point(6, 248);
             this.tbResize.MaxLength = 16;
             this.tbResize.Name = "tbResize";
             this.tbResize.Size = new System.Drawing.Size(188, 22);
@@ -176,15 +185,15 @@
             // lbCapacity
             // 
             this.lbCapacity.AutoSize = true;
-            this.lbCapacity.Location = new System.Drawing.Point(6, 421);
+            this.lbCapacity.Location = new System.Drawing.Point(87, 310);
             this.lbCapacity.Name = "lbCapacity";
             this.lbCapacity.Size = new System.Drawing.Size(105, 28);
             this.lbCapacity.TabIndex = 8;
-            this.lbCapacity.Text = "kapacitet:\r\n  8192 bajtova\r\n";
+            this.lbCapacity.Text = "Kapacitet:\r\n  8192 bajtova\r\n";
             // 
             // btnResize
             // 
-            this.btnResize.Location = new System.Drawing.Point(6, 293);
+            this.btnResize.Location = new System.Drawing.Point(6, 276);
             this.btnResize.Name = "btnResize";
             this.btnResize.Size = new System.Drawing.Size(188, 23);
             this.btnResize.TabIndex = 28;
@@ -194,9 +203,9 @@
             // 
             // btnSearch
             // 
-            this.btnSearch.Location = new System.Drawing.Point(52, 360);
+            this.btnSearch.Location = new System.Drawing.Point(52, 327);
             this.btnSearch.Name = "btnSearch";
-            this.btnSearch.Size = new System.Drawing.Size(30, 23);
+            this.btnSearch.Size = new System.Drawing.Size(30, 22);
             this.btnSearch.TabIndex = 7;
             this.btnSearch.Text = ">>";
             this.btnSearch.UseVisualStyleBackColor = true;
@@ -204,7 +213,7 @@
             // 
             // tbSearch
             // 
-            this.tbSearch.Location = new System.Drawing.Point(6, 360);
+            this.tbSearch.Location = new System.Drawing.Point(6, 327);
             this.tbSearch.MaxLength = 4;
             this.tbSearch.Name = "tbSearch";
             this.tbSearch.Size = new System.Drawing.Size(40, 22);
@@ -214,7 +223,7 @@
             // lbResize
             // 
             this.lbResize.AutoSize = true;
-            this.lbResize.Location = new System.Drawing.Point(14, 244);
+            this.lbResize.Location = new System.Drawing.Point(10, 227);
             this.lbResize.Name = "lbResize";
             this.lbResize.Size = new System.Drawing.Size(126, 14);
             this.lbResize.TabIndex = 27;
@@ -222,7 +231,7 @@
             // 
             // btnCopy
             // 
-            this.btnCopy.Location = new System.Drawing.Point(6, 202);
+            this.btnCopy.Location = new System.Drawing.Point(6, 193);
             this.btnCopy.Name = "btnCopy";
             this.btnCopy.Size = new System.Drawing.Size(188, 23);
             this.btnCopy.TabIndex = 26;
@@ -233,7 +242,7 @@
             // lbDst
             // 
             this.lbDst.AutoSize = true;
-            this.lbDst.Location = new System.Drawing.Point(106, 157);
+            this.lbDst.Location = new System.Drawing.Point(106, 148);
             this.lbDst.Name = "lbDst";
             this.lbDst.Size = new System.Drawing.Size(91, 14);
             this.lbDst.TabIndex = 25;
@@ -241,7 +250,7 @@
             // 
             // tbDst
             // 
-            this.tbDst.Location = new System.Drawing.Point(154, 174);
+            this.tbDst.Location = new System.Drawing.Point(154, 165);
             this.tbDst.MaxLength = 4;
             this.tbDst.Name = "tbDst";
             this.tbDst.Size = new System.Drawing.Size(40, 22);
@@ -251,7 +260,7 @@
             // lbSrcTo
             // 
             this.lbSrcTo.AutoSize = true;
-            this.lbSrcTo.Location = new System.Drawing.Point(52, 157);
+            this.lbSrcTo.Location = new System.Drawing.Point(52, 148);
             this.lbSrcTo.Name = "lbSrcTo";
             this.lbSrcTo.Size = new System.Drawing.Size(28, 14);
             this.lbSrcTo.TabIndex = 23;
@@ -260,7 +269,7 @@
             // lbSrcFrom
             // 
             this.lbSrcFrom.AutoSize = true;
-            this.lbSrcFrom.Location = new System.Drawing.Point(6, 157);
+            this.lbSrcFrom.Location = new System.Drawing.Point(6, 148);
             this.lbSrcFrom.Name = "lbSrcFrom";
             this.lbSrcFrom.Size = new System.Drawing.Size(28, 14);
             this.lbSrcFrom.TabIndex = 22;
@@ -268,7 +277,7 @@
             // 
             // tbSrcTo
             // 
-            this.tbSrcTo.Location = new System.Drawing.Point(52, 174);
+            this.tbSrcTo.Location = new System.Drawing.Point(52, 165);
             this.tbSrcTo.MaxLength = 4;
             this.tbSrcTo.Name = "tbSrcTo";
             this.tbSrcTo.Size = new System.Drawing.Size(40, 22);
@@ -277,7 +286,7 @@
             // 
             // tbSrcFrom
             // 
-            this.tbSrcFrom.Location = new System.Drawing.Point(6, 174);
+            this.tbSrcFrom.Location = new System.Drawing.Point(6, 165);
             this.tbSrcFrom.MaxLength = 4;
             this.tbSrcFrom.Name = "tbSrcFrom";
             this.tbSrcFrom.Size = new System.Drawing.Size(40, 22);
@@ -287,7 +296,7 @@
             // lbCopy
             // 
             this.lbCopy.AutoSize = true;
-            this.lbCopy.Location = new System.Drawing.Point(14, 139);
+            this.lbCopy.Location = new System.Drawing.Point(10, 130);
             this.lbCopy.Name = "lbCopy";
             this.lbCopy.Size = new System.Drawing.Size(126, 14);
             this.lbCopy.TabIndex = 19;
@@ -351,7 +360,7 @@
             // lbClearMemory
             // 
             this.lbClearMemory.AutoSize = true;
-            this.lbClearMemory.Location = new System.Drawing.Point(14, 34);
+            this.lbClearMemory.Location = new System.Drawing.Point(10, 34);
             this.lbClearMemory.Name = "lbClearMemory";
             this.lbClearMemory.Size = new System.Drawing.Size(119, 14);
             this.lbClearMemory.TabIndex = 11;
@@ -368,10 +377,16 @@
             // 
             // groupOptions
             // 
+            this.groupOptions.Controls.Add(this.btnStopExec);
+            this.groupOptions.Controls.Add(this.btnExecuteUntil);
+            this.groupOptions.Controls.Add(this.lbStep);
+            this.groupOptions.Controls.Add(this.lbExecuteUntil);
+            this.groupOptions.Controls.Add(this.tbExecuteUntil);
             this.groupOptions.Controls.Add(this.lbSearch);
             this.groupOptions.Controls.Add(this.tbResize);
             this.groupOptions.Controls.Add(this.lbCapacity);
             this.groupOptions.Controls.Add(this.btnResize);
+            this.groupOptions.Controls.Add(this.btnStep);
             this.groupOptions.Controls.Add(this.btnSearch);
             this.groupOptions.Controls.Add(this.tbSearch);
             this.groupOptions.Controls.Add(this.lbResize);
@@ -398,6 +413,56 @@
             this.groupOptions.TabStop = false;
             this.groupOptions.Text = "Opcije";
             // 
+            // btnStopExec
+            // 
+            this.btnStopExec.Enabled = false;
+            this.btnStopExec.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnStopExec.ForeColor = System.Drawing.Color.Red;
+            this.btnStopExec.Location = new System.Drawing.Point(119, 423);
+            this.btnStopExec.Name = "btnStopExec";
+            this.btnStopExec.Size = new System.Drawing.Size(75, 23);
+            this.btnStopExec.TabIndex = 37;
+            this.btnStopExec.Text = "ZAUSTAVI";
+            this.btnStopExec.UseVisualStyleBackColor = true;
+            this.btnStopExec.Click += new System.EventHandler(this.btnStopExec_Click);
+            // 
+            // btnExecuteUntil
+            // 
+            this.btnExecuteUntil.Location = new System.Drawing.Point(52, 424);
+            this.btnExecuteUntil.Name = "btnExecuteUntil";
+            this.btnExecuteUntil.Size = new System.Drawing.Size(30, 22);
+            this.btnExecuteUntil.TabIndex = 36;
+            this.btnExecuteUntil.Text = ">>";
+            this.btnExecuteUntil.UseVisualStyleBackColor = true;
+            this.btnExecuteUntil.Click += new System.EventHandler(this.btnExecuteUntil_Click);
+            // 
+            // lbStep
+            // 
+            this.lbStep.AutoSize = true;
+            this.lbStep.Location = new System.Drawing.Point(6, 360);
+            this.lbStep.Name = "lbStep";
+            this.lbStep.Size = new System.Drawing.Size(49, 14);
+            this.lbStep.TabIndex = 35;
+            this.lbStep.Text = "Korak:";
+            // 
+            // lbExecuteUntil
+            // 
+            this.lbExecuteUntil.AutoSize = true;
+            this.lbExecuteUntil.Location = new System.Drawing.Point(6, 407);
+            this.lbExecuteUntil.Name = "lbExecuteUntil";
+            this.lbExecuteUntil.Size = new System.Drawing.Size(98, 14);
+            this.lbExecuteUntil.TabIndex = 34;
+            this.lbExecuteUntil.Text = "Izvršavaj do:";
+            // 
+            // tbExecuteUntil
+            // 
+            this.tbExecuteUntil.Location = new System.Drawing.Point(6, 424);
+            this.tbExecuteUntil.MaxLength = 4;
+            this.tbExecuteUntil.Name = "tbExecuteUntil";
+            this.tbExecuteUntil.Size = new System.Drawing.Size(40, 22);
+            this.tbExecuteUntil.TabIndex = 33;
+            this.tbExecuteUntil.Text = "0000";
+            // 
             // lbMemory
             // 
             this.lbMemory.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
@@ -420,17 +485,17 @@
             this.lbInstructions.Name = "lbInstructions";
             this.lbInstructions.Size = new System.Drawing.Size(300, 450);
             this.lbInstructions.TabIndex = 31;
+            this.lbInstructions.DoubleClick += new System.EventHandler(this.lbInstructions_DoubleClick);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1184, 511);
+            this.ClientSize = new System.Drawing.Size(1184, 481);
             this.Controls.Add(this.lbInstructions);
             this.Controls.Add(this.groupOptions);
             this.Controls.Add(this.lbMemory);
             this.Controls.Add(this.lbRegisters);
-            this.Controls.Add(this.btnStep);
             this.Controls.Add(this.msTools);
             this.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -438,6 +503,7 @@
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "Emulator";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.msTools.ResumeLayout(false);
             this.msTools.PerformLayout();
             this.groupOptions.ResumeLayout(false);
@@ -451,10 +517,10 @@
 
         private MenuStrip msTools;
         private ToolStripMenuItem fileToolStripMenuItem;
-        private ToolStripMenuItem učitajToolStripMenuItem;
-        private ToolStripMenuItem osvežiToolStripMenuItem;
-        private ToolStripMenuItem sačuvajToolStripMenuItem;
-        private ToolStripMenuItem sačuvajKaoToolStripMenuItem;
+        private ToolStripMenuItem msLoad;
+        private ToolStripMenuItem msReload;
+        private ToolStripMenuItem msSave;
+        private ToolStripMenuItem msSaveAs;
         private ToolStripMenuItem zaslugeToolStripMenuItem;
         private ToolStripMenuItem đorđeRmušRT1419ToolStripMenuItem;
         private Button btnStep;
@@ -485,5 +551,10 @@
         private GroupBox groupOptions;
         private ListBox lbMemory;
         private ListBox lbInstructions;
+        private Label lbExecuteUntil;
+        private TextBox tbExecuteUntil;
+        private Label lbStep;
+        private Button btnExecuteUntil;
+        private Button btnStopExec;
     }
 }

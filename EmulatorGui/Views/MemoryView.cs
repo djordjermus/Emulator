@@ -3,6 +3,9 @@ using System.Text;
 
 namespace EmulatorGui {
     public class MemoryView : IValueView {
+        static NumberFormat bin8 = BinaryFormat.Instance8;
+        static NumberFormat hex8 = HexadecimalFormat.Instance8;
+        static NumberFormat dec  = DecimalFormat.Instance;
         public MemoryView(CpuEmulator.Memory memory, uint address) {
             Memory  = memory;
             Address = address;
@@ -30,27 +33,27 @@ namespace EmulatorGui {
             byte msb = (byte)(((value >> 8) & 0xFF));
             // BINARY + HEX LSB
             builder.Append(" b");
-            builder.Append(Utility.ToBin(lsb));
+            builder.Append(bin8.To(lsb));
 
 
             builder.Append(" h");
-            builder.Append((lsb).ToString("X2"));
+            builder.Append(hex8.To(lsb));
 
             builder.Append("; ");
 
             // BINARY + HEX MSB
             builder.Append(" b");
-            builder.Append(Utility.ToBin(msb));
+            builder.Append(bin8.To(msb));
 
 
             builder.Append(" h");
-            builder.Append((msb).ToString("X2"));
+            builder.Append(hex8.To(msb));
 
             builder.Append("; ");
 
             // Decimal
             builder.Append(' ');
-            builder.Append(value.ToString("00000"));
+            builder.Append(dec.To(value));
             return builder.ToString();
         }
         public ushort Get() =>

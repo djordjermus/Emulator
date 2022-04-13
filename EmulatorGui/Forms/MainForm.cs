@@ -1,24 +1,41 @@
 using CpuEmulator.p16;
 namespace EmulatorGui {
     public partial class MainForm : Form {
-        const int memViewCount = 32;
-        Processor _processor;
-        ViewEditForm _valueEditor;
-
+        const int           _memViewCount = 32;
+        bool                _executing    = false;
+        bool                _requestStop  = false;
+        Processor           _processor;
+        ValueEditForm       _valueEditor;
+        InstructionEditForm _instructionEditor;
+        Thread              _executionThread;
+        OpenFileDialog      _load = new OpenFileDialog();
+        SaveFileDialog      _save = new SaveFileDialog();
         public MainForm() {
             DoubleBuffered = true;
             InitializeComponent();
-            _valueEditor   = new();
-            _processor     = new Processor(new CpuEmulator.Memory(8192));
-            EncodeInstructions(_processor.Memory);
+            _processor         = new Processor(new CpuEmulator.Memory(8192));
+            _valueEditor       = new();
+            _instructionEditor = new(_processor.Memory, 0u);
+            _executionThread   = new Thread(ExecuteUntilThreadFunct);
 
+            // Initialize views
             InitializeRegisterView();
-            InitializeMemoryView(0, memViewCount);
+            InitializeMemoryView(0, _memViewCount);
             InitializeInstructionView();
             RefreshCapacityLabel();
+
+            // Subscribe to processor
+            _processor.OnExecute += RefreshDisplay;
+
             UpdateStepButton();
         }
 
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
+            if (_executionThread != null && _executionThread.ThreadState == ThreadState.Running) { 
+                _requestStop = true;
+                _executionThread.Join();
+            }
+        }
 
         // - - - - - - - - - - - - - - - - - - - -
         // R E G I S T E R   V I E W- - - - - - -
@@ -33,11 +50,14 @@ namespace EmulatorGui {
             lbRegisters.DataSource = views;
         }
         private void lbRegisters_DoubleClick(object sender, EventArgs e) {
+            if (Utility.ErrorSound(!_executing)) return;
             _valueEditor.View = (lbRegisters.SelectedItem as IValueView)!;
             _valueEditor.ShowDialog();
             RefreshListBox(lbRegisters);
+            UpdateStepButton();
+            SelectPCInstruction();
         }
-        
+
         // - - - - - - - - - - - - - - - - - - - -
         // M E M O R Y   V I E W- - - - - - - - -
         // - - - - - - - - - - - - - - - - - - -
@@ -68,46 +88,42 @@ namespace EmulatorGui {
             RefreshListBox(lbMemory);
         }
         private void btnClear_Click(object sender, EventArgs e) {
-            if (!Utility.FromHex(tbClearFrom.Text, out ushort from)) {
-                System.Media.SystemSounds.Hand.Play();
+            NumberFormat format = HexadecimalFormat.Instance32;
+            CpuEmulator.Memory memory = _processor.Memory;
+
+            if (Utility.ErrorSound(!_executing)) return;
+            if(Utility.ErrorSound(format.From(tbClearFrom.Text, out uint from))) 
                 return;
-            }
-            if (!Utility.FromHex(tbClearTo.Text, out ushort to)) {
-                System.Media.SystemSounds.Hand.Play();
+            
+            if (Utility.ErrorSound(format.From(tbClearTo.Text, out uint to)))
                 return;
-            }
-            if (!Utility.FromHex(tbClearValue.Text, out ushort value)) {
-                System.Media.SystemSounds.Hand.Play();
+            
+            if (Utility.ErrorSound(format.From(tbClearValue.Text, out uint value)))
                 return;
-            }
-            if (!_processor.Memory.CanAccess(from)) {
-                System.Media.SystemSounds.Hand.Play();
+            
+            if (Utility.ErrorSound(memory.CanAccess(from)))
                 return;
-            }
 
             while (from < to)
-                if (_processor.Memory.Write(from++, (byte)value) == 0) break;
+                if (memory.Write(from++, (byte)value) == 0) break;
             MemoryChanged();
         }
         private void btnCopy_Click(object sender, EventArgs e) {
+            NumberFormat format = HexadecimalFormat.Instance32;
             CpuEmulator.Memory memory = _processor.Memory;
 
-            if (!Utility.FromHex(tbSrcFrom.Text, out ushort from)) {
-                System.Media.SystemSounds.Hand.Play();
+            if (Utility.ErrorSound(!_executing)) return;
+            if (Utility.ErrorSound(format.From(tbSrcFrom.Text, out uint from)))
                 return;
-            }
-            if (!Utility.FromHex(tbSrcTo.Text, out ushort to)) {
-                System.Media.SystemSounds.Hand.Play();
+            
+            if (Utility.ErrorSound(format.From(tbSrcTo.Text, out uint to)))
                 return;
-            }
-            if (!Utility.FromHex(tbDst.Text, out ushort dst)) {
-                System.Media.SystemSounds.Hand.Play();
+            
+            if (Utility.ErrorSound(format.From(tbDst.Text, out uint dst)))
                 return;
-            }
-            if (!memory.CanAccess(from) || !memory.CanAccess((uint)(to - 1))) {
-                System.Media.SystemSounds.Hand.Play();
+            
+            if (Utility.ErrorSound(memory.CanAccess(from) || !memory.CanAccess((to - 1))))
                 return;
-            }
 
             while (from < to) {
                 memory.Read(from++, out byte val);
@@ -117,30 +133,33 @@ namespace EmulatorGui {
             MemoryChanged();
         }
         private void btnResize_Click(object sender, EventArgs e) {
-            if (!uint.TryParse(tbResize.Text, out uint newSize)) {
-                System.Media.SystemSounds.Hand.Play();
+            if (Utility.ErrorSound(!_executing)) return;
+            if (Utility.ErrorSound(uint.TryParse(tbResize.Text, out uint newSize)))
                 return;
-            }
-            _processor.Memory.Resize(newSize);
 
+            _processor.Memory.Resize(newSize);
             RefreshCapacityLabel();
             MemoryChanged();
         }
         private void btnSearch_Click(object sender, EventArgs e) {
-            if (!Utility.FromHex(tbSearch.Text, out ushort address)) {
-                System.Media.SystemSounds.Hand.Play();
+            NumberFormat format = HexadecimalFormat.Instance32;
+            CpuEmulator.Memory memory = _processor.Memory;
+
+            if (Utility.ErrorSound(!_executing)) return;
+            if (Utility.ErrorSound(format.From(tbSearch.Text, out uint address)))
                 return;
-            }
-            SearchMemory(address);
+
+            SearchMemory((int)address);
         }
         private void lbMemory_DoubleClick(object sender, EventArgs e) {
+            if (Utility.ErrorSound(!_executing)) return;
             _valueEditor.View = (lbMemory.SelectedItem as IValueView)!;
             _valueEditor.ShowDialog();
             MemoryChanged();
         }
 
         // - - - - - - - - - - - - - - - - - - - -
-        // I N S T R U C T I O N   V I E V- - - -
+        // I N S T R U C T I O N   V I E W- - - -
         // - - - - - - - - - - - - - - - - - - -
 
         private void InitializeInstructionView() {
@@ -152,7 +171,7 @@ namespace EmulatorGui {
                     addr, 
                     out CpuEmulator.Instruction ins);
             
-                views.Add(new InstructionView(addr, ins));
+                views.Add(new InstructionView(_processor.Memory, addr));
 
                 addr += (ushort)width;
             }
@@ -199,9 +218,162 @@ namespace EmulatorGui {
         }
         private void UpdateStepButton() {
             _processor.Get(Processor.IX_PC, out ushort pc);
-            btnStep.Text = "> " + pc.ToString("X4") + " <";
+            btnStep.Text = ">>" + pc.ToString("X4");
         }
+        private void ExecuteUntilThreadFunct() {
+            NumberFormat format = HexadecimalFormat.Instance32;
+            // Fetch end address, fail if invalid
+            if (Utility.ErrorSound(format.From(tbExecuteUntil.Text, out uint endAddr))) 
+                return;
+
+            // Fetch current program counter
+            _processor.Get(Processor.IX_PC, out ushort pc);
+
+            _requestStop = false;
+            _executing   = true;
+
+            // If pc is already at end address, do a single step forward
+            if (pc == endAddr) 
+                _processor.HandleInterrupt(_processor.Execute()); 
+            
+            // Enable Stop button + execute until end address is hit
+            BeginInvoke(() => { ExecutionBegin(); });
+            while (!_requestStop) { 
+                _processor.Get(Processor.IX_PC, out pc);
+                if (pc == endAddr) break;
+
+                _processor.HandleInterrupt(_processor.Execute());
+            }
+
+            // Mark end of execution
+            _requestStop = false;
+            _executing   = false;
+            BeginInvoke(() => { ExecutionEnd(); });
+        }
+        private void MemoryChanged() {
+            RefreshListBox(lbMemory);
+            RebuildInstructionView();
+            RefreshListBox(lbInstructions);
+            SelectPCInstruction();
+        }
+        private void RefreshDisplay() {
+            if (_executing) return;
+
+            UpdateStepButton();
+            RefreshListBox(lbRegisters);
+            RefreshListBox(lbMemory);
+            RefreshListBox(lbInstructions);
+            SelectPCInstruction();
+        }
+        private void lbInstructions_DoubleClick(object sender, EventArgs e) {
+            if (Utility.ErrorSound(!_executing)) return;
+            InstructionView view = (lbInstructions.SelectedItem as InstructionView)!;
+            _instructionEditor.Set(view.Memory, view.Address);
+            _instructionEditor.ShowDialog();
+            MemoryChanged();
+        }
+
+        // - - - - - - - - - - - -
+        // F I L E S- - - - - - -
+        // - - - - - - - - - - -
+
+        void SaveToFile() {
+            string path = _save.FileName;
+            try {
+                using (FileStream file = File.OpenWrite(path)) {
+                    using (BinaryWriter bw = new BinaryWriter(file)) {
+                        bw.Write(_processor.Memory.Data);
+                    }
+                }
+            }
+            catch (Exception e) {
+                Utility.ErrorSound(false);
+                MessageBox.Show(e.Message, "Greška");
+                return;
+            }
+            MemoryChanged();
+        }
+        void LoadFromFile() {
+            string path = _load.FileName;
+
+            try {
+                using (FileStream file = File.OpenRead(path)) {
+                    using (BinaryReader br = new BinaryReader(file)) { 
+                        if (_processor.Memory.Capacity < file.Length)
+                            _processor.Memory.Resize((uint)file.Length);
+
+                        uint i = 0;
+                        while (file.Position < file.Length)
+                            _processor.Memory.Write(i++, br.ReadByte());
+                    }
+                }
+            }
+            catch (Exception e) {
+                Utility.ErrorSound(false);
+                MessageBox.Show(e.Message, "Greška");
+                return;
+            }
+            MemoryChanged();
+        }
+
+        private void btnLoadClick(object sender, EventArgs e) {
+            _load.Filter = "Binarni fajlovi|*.bin";
+            if (_load.ShowDialog() != DialogResult.OK)     return;
+            if (Utility.ErrorSound(_load.CheckFileExists)) return;
+
+            msReload.Enabled = true;
+            msSave.Enabled   = true;
+
+            _save.FileName = _load.FileName;
+            Text           = _load.FileName;
+
+            LoadFromFile();
+        }
+        private void btnSaveAsClick(object sender, EventArgs e) {
+            _save.Filter = "Binarni fajlovi|*.bin";
+            if (_save.ShowDialog() != DialogResult.OK)     return;
+
+            msReload.Enabled = true;
+            msSave.Enabled   = true;
+            
+            _load.FileName = _save.FileName;
+            Text           = _save.FileName;
+
+            SaveToFile();
+        }
+        private void msSave_Click(object sender, EventArgs e) {
+            SaveToFile();
+        }
+
+        private void msReload_Click(object sender, EventArgs e) {
+            LoadFromFile();
+        }
+        // - - - - - - - - - - - - - - - - - - - -
+        // C O N T R O L S- - - - - - - - - - - -
+        // - - - - - - - - - - - - - - - - - - -
+
+        private void ExecutionBegin() {
+            btnClear.Enabled        = false;
+            btnCopy.Enabled         = false;
+            btnResize.Enabled       = false;
+            btnSearch.Enabled       = false;
+            btnStep.Enabled         = false;
+            btnExecuteUntil.Enabled = false;
+            btnStopExec.Enabled     = true;
+        }
+        private void ExecutionEnd() { 
+            btnClear.Enabled        = true;
+            btnCopy.Enabled         = true;
+            btnResize.Enabled       = true;
+            btnSearch.Enabled       = true;
+            btnStep.Enabled         = true;
+            btnExecuteUntil.Enabled = true;
+            btnStopExec.Enabled     = false;
+            RefreshDisplay();
+        }
+        
         private void btnStep_Click(object sender, EventArgs e) {
+            if (Utility.ErrorSound(!_executing)) return;
             _processor.HandleInterrupt(_processor.Execute());
             UpdateStepButton();
             RefreshListBox(lbRegisters);
@@ -209,73 +381,15 @@ namespace EmulatorGui {
             RefreshListBox(lbInstructions);
             SelectPCInstruction();
         }
-
-
-        private void MemoryChanged() {
-            RefreshListBox(lbMemory);
-            RebuildInstructionView();
-            RefreshListBox(lbInstructions);
-            SelectPCInstruction();
+        private void btnExecuteUntil_Click(object sender, EventArgs e) {
+            if (Utility.ErrorSound(!_executing)) return;
+            _executionThread = new Thread(ExecuteUntilThreadFunct);
+            _executionThread.Start();
+        }
+        private void btnStopExec_Click(object sender, EventArgs e) { 
+            _requestStop = true;
         }
 
-        static void EncodeInstructions(CpuEmulator.Memory memory) {
-            CpuEmulator.Instruction[] instructions 
-                = new CpuEmulator.Instruction[64];
-            ushort a = 12;
-            ushort b = 5;
 
-            instructions[0] = EncoderDecoder.Load(
-                Mode.immediate, 0,
-                Mode.immediate, a);
-            instructions[1] = EncoderDecoder.Load(
-                Mode.immediate, 1,
-                Mode.immediate, b);
-
-            instructions[2] = EncoderDecoder.Add(
-                Mode.immediate, 2,
-                Mode.register, 0,
-                Mode.register, 1);
-            instructions[3] = EncoderDecoder.Subtract(
-                Mode.immediate, 3,
-                Mode.register, 0,
-                Mode.register, 1);
-            instructions[4] = EncoderDecoder.Multiply(
-                Mode.immediate, 4,
-                Mode.register, 0,
-                Mode.register, 1);
-            instructions[5] = EncoderDecoder.Divide(
-                Mode.immediate, 5,
-                Mode.register, 0,
-                Mode.register, 1);
-
-            instructions[6] = EncoderDecoder.BitwiseAnd(
-                Mode.immediate, 6,
-                Mode.register, 0,
-                Mode.register, 1);
-            instructions[7] = EncoderDecoder.BitwiseOr(
-                Mode.immediate, 7,
-                Mode.register, 0,
-                Mode.register, 1);
-            instructions[8] = EncoderDecoder.BitwiseXor(
-                Mode.immediate, 8,
-                Mode.register, 0,
-                Mode.register, 1);
-            instructions[9] = EncoderDecoder.Invert(
-                Mode.immediate, 9,
-                Mode.register, 0);
-
-            for (int i = 0; i < 8; i++)
-                instructions[10 + i] = EncoderDecoder.Store(
-                    Mode.immediate, (ushort)(1024 + 2 * i),
-                    Mode.register, (ushort)(2 + i));
-
-            instructions[18] = EncoderDecoder.Jump(
-                Mode.immediate, 0);
-
-            // Enocode instructions 
-            uint encAddr = 0;
-            for (int i = 0; i < instructions.Length; i++)
-                encAddr += EncoderDecoder.Encode(memory, encAddr, ref instructions[i]);
-        }
     }
 }

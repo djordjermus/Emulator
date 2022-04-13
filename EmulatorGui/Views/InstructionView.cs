@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CpuEmulator;
 using CpuEmulator.p16;
 namespace EmulatorGui {
     class InstructionView {
         public InstructionView(
-            uint address,
-            CpuEmulator.Instruction instruction) {
+            Memory memory,
+            uint address) {
+            _memory = memory;
             _address     = address;
-            _instruction = instruction;
         }
         public static List<InstructionView> CreateViews(
-            CpuEmulator.Memory memory,
+            Memory memory,
             uint address, uint count) {
 
                 // Create view list
@@ -27,10 +28,10 @@ namespace EmulatorGui {
                     uint readb = EncoderDecoder.Decode(
                         memory,
                         readPtr,
-                        out CpuEmulator.Instruction instruction);
+                        out Instruction instruction);
 
                     // Create view
-                    InstructionView view = new InstructionView(readPtr, instruction);
+                    InstructionView view = new InstructionView(memory, readPtr);
                     ret.Add(view);
 
                     // Progress memory pointer
@@ -43,15 +44,25 @@ namespace EmulatorGui {
             get => _address; 
             set => _address = value; 
         }
-        public CpuEmulator.Instruction Instruction { 
-            get => _instruction; 
-            set => _instruction = value;
+        public Instruction Instruction {
+            get {
+                EncoderDecoder.Decode(_memory, _address, out Instruction instr);
+                return instr;
+            }
+            set {
+                EncoderDecoder.Encode(_memory, _address, ref value);
+            }
         }
-
+        public Memory Memory {
+            get => _memory;
+            set => _memory = value;
+        }
         public override string ToString() {
+            EncoderDecoder.Decode(_memory, _address, out Instruction instr);
+
             StringBuilder builder = new StringBuilder(40);
-            OpCode opcode = EncoderDecoder.GetOpCode(ref _instruction);
-            uint opct     = EncoderDecoder.GetOpCount(ref _instruction);
+            OpCode opcode = EncoderDecoder.GetOpCode(ref instr);
+            uint opct     = EncoderDecoder.GetOpCount(ref instr);
             
             builder.Append(_address.ToString("X4"));
             builder.Append(' ');
@@ -59,30 +70,29 @@ namespace EmulatorGui {
 
             if (opct > 0) {
                 builder.Append(' ');
-                builder.Append(modePrefix[(int)EncoderDecoder.GetMode1(ref _instruction)]);
-                builder.Append(_instruction.Operand1.ToString("X4"));
+                Mode mode = EncoderDecoder.GetMode1(ref instr);
+                builder.Append(Utility.ModeToShortString(mode));
+                builder.Append(' ');
+                builder.Append(instr.Operand1.ToString("X4"));
             }
             if (opct > 1) {
                 builder.Append("  ");
-                builder.Append(modePrefix[(int)EncoderDecoder.GetMode2(ref _instruction)]);
-                builder.Append(_instruction.Operand2.ToString("X4"));
+                Mode mode = EncoderDecoder.GetMode2(ref instr);
+                builder.Append(Utility.ModeToShortString(mode));
+                builder.Append(' ');
+                builder.Append(instr.Operand2.ToString("X4"));
             }
             if (opct > 2) { 
                 builder.Append("  ");
-                builder.Append(modePrefix[(int)EncoderDecoder.GetMode3(ref _instruction)]);
-                builder.Append(_instruction.Operand3.ToString("X4"));
+                Mode mode = EncoderDecoder.GetMode3(ref instr);
+                builder.Append(Utility.ModeToShortString(mode));
+                builder.Append(' ');
+                builder.Append(instr.Operand3.ToString("X4"));
             }
             return builder.ToString();
         }
-
+        
+        Memory _memory;
         uint _address;
-        CpuEmulator.Instruction _instruction;
-
-        string[] modePrefix = { 
-            "imm/",    // IMMEDIATE
-            "reg/",    // REGISTER
-            "dir/",    // DIRECT
-            "rdr/",    // REGISTER DIRECT
-        };
     }
 }

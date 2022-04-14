@@ -1,4 +1,4 @@
-using CpuEmulator.p16;
+﻿using CpuEmulator.p16;
 namespace EmulatorGui {
     public partial class MainForm : Form {
         const int           _memViewCount = 32;
@@ -17,7 +17,7 @@ namespace EmulatorGui {
             _valueEditor       = new();
             _instructionEditor = new(_processor.Memory, 0u);
             _executionThread   = new Thread(ExecuteUntilThreadFunct);
-
+            
             // Initialize views
             InitializeRegisterView();
             InitializeMemoryView(0, _memViewCount);
@@ -50,7 +50,8 @@ namespace EmulatorGui {
             lbRegisters.DataSource = views;
         }
         private void lbRegisters_DoubleClick(object sender, EventArgs e) {
-            if (Utility.ErrorSound(!_executing)) return;
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
+
             _valueEditor.View = (lbRegisters.SelectedItem as IValueView)!;
             _valueEditor.ShowDialog();
             RefreshListBox(lbRegisters);
@@ -88,41 +89,63 @@ namespace EmulatorGui {
             RefreshListBox(lbMemory);
         }
         private void btnClear_Click(object sender, EventArgs e) {
-            NumberFormat format = HexadecimalFormat.Instance32;
+            NumberFormat format       = HexadecimalFormat.Instance16;
             CpuEmulator.Memory memory = _processor.Memory;
+            if (Assert.IfFalse(
+                !_executing,
+                _reasonExecuting)) return;
 
-            if (Utility.ErrorSound(!_executing)) return;
-            if(Utility.ErrorSound(format.From(tbClearFrom.Text, out uint from))) 
+            if (Assert.IfFalse(
+                format.From(tbClearFrom.Text, out uint from),
+                _reasonAddrNotValid))
                 return;
-            
-            if (Utility.ErrorSound(format.From(tbClearTo.Text, out uint to)))
+
+            if (Assert.IfFalse(
+                format.From(tbClearTo.Text, out uint to),
+                _reasonAddrNotValid))
                 return;
-            
-            if (Utility.ErrorSound(format.From(tbClearValue.Text, out uint value)))
+
+            if (Assert.IfFalse(
+                format.From(tbClearValue.Text, out uint value),
+                _reasonClearValueNotValid))
                 return;
-            
-            if (Utility.ErrorSound(memory.CanAccess(from)))
+
+            if (Assert.IfFalse(
+                memory.CanAccess(from) && (from < to),
+                _reasonAddrRangeNotValid))
                 return;
 
             while (from < to)
                 if (memory.Write(from++, (byte)value) == 0) break;
+
             MemoryChanged();
         }
         private void btnCopy_Click(object sender, EventArgs e) {
             NumberFormat format = HexadecimalFormat.Instance32;
             CpuEmulator.Memory memory = _processor.Memory;
 
-            if (Utility.ErrorSound(!_executing)) return;
-            if (Utility.ErrorSound(format.From(tbSrcFrom.Text, out uint from)))
+            if (Assert.IfFalse(
+                !_executing, 
+                _reasonExecuting)) return;
+
+            if (Assert.IfFalse(
+                format.From(tbSrcFrom.Text, out uint from),
+                _reasonAddrNotValid))
                 return;
             
-            if (Utility.ErrorSound(format.From(tbSrcTo.Text, out uint to)))
+            if (Assert.IfFalse(
+                format.From(tbSrcTo.Text, out uint to),
+                _reasonAddrNotValid))
                 return;
             
-            if (Utility.ErrorSound(format.From(tbDst.Text, out uint dst)))
+            if (Assert.IfFalse(
+                format.From(tbDst.Text, out uint dst),
+                _reasonAddrNotValid))
                 return;
             
-            if (Utility.ErrorSound(memory.CanAccess(from) || !memory.CanAccess((to - 1))))
+            if (Assert.IfFalse(
+                memory.CanAccess(from) && memory.CanAccess(to - 1) && (from < to),
+                _reasonAddrRangeNotValid))
                 return;
 
             while (from < to) {
@@ -133,9 +156,12 @@ namespace EmulatorGui {
             MemoryChanged();
         }
         private void btnResize_Click(object sender, EventArgs e) {
-            if (Utility.ErrorSound(!_executing)) return;
-            if (Utility.ErrorSound(uint.TryParse(tbResize.Text, out uint newSize)))
-                return;
+            if (Assert.IfFalse(
+                !_executing, 
+                _reasonExecuting)) return;
+            if (Assert.IfFalse(
+                uint.TryParse(tbResize.Text, out uint newSize),
+                _reasonResizeNotValid)) return;
 
             _processor.Memory.Resize(newSize);
             RefreshCapacityLabel();
@@ -145,14 +171,19 @@ namespace EmulatorGui {
             NumberFormat format = HexadecimalFormat.Instance32;
             CpuEmulator.Memory memory = _processor.Memory;
 
-            if (Utility.ErrorSound(!_executing)) return;
-            if (Utility.ErrorSound(format.From(tbSearch.Text, out uint address)))
+            if (Assert.IfFalse(
+                !_executing, 
+                _reasonExecuting)) 
+                return;
+            if (Assert.IfFalse(
+                format.From(tbSearch.Text, out uint address),
+                _reasonAddrNotValid))
                 return;
 
             SearchMemory((int)address);
         }
         private void lbMemory_DoubleClick(object sender, EventArgs e) {
-            if (Utility.ErrorSound(!_executing)) return;
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
             _valueEditor.View = (lbMemory.SelectedItem as IValueView)!;
             _valueEditor.ShowDialog();
             MemoryChanged();
@@ -218,12 +249,14 @@ namespace EmulatorGui {
         }
         private void UpdateStepButton() {
             _processor.Get(Processor.IX_PC, out ushort pc);
-            btnStep.Text = ">>" + pc.ToString("X4");
+            btnStep.Text = "[ " + pc.ToString("X4") + " ]";
         }
         private void ExecuteUntilThreadFunct() {
             NumberFormat format = HexadecimalFormat.Instance32;
             // Fetch end address, fail if invalid
-            if (Utility.ErrorSound(format.From(tbExecuteUntil.Text, out uint endAddr))) 
+            if (Assert.IfFalse(
+                format.From(tbExecuteUntil.Text, out uint endAddr),
+                _reasonAddrNotValid))
                 return;
 
             // Fetch current program counter
@@ -237,7 +270,7 @@ namespace EmulatorGui {
                 _processor.HandleInterrupt(_processor.Execute()); 
             
             // Enable Stop button + execute until end address is hit
-            BeginInvoke(() => { ExecutionBegin(); });
+            BeginInvoke(() => { LockOptions(); });
             while (!_requestStop) { 
                 _processor.Get(Processor.IX_PC, out pc);
                 if (pc == endAddr) break;
@@ -248,7 +281,7 @@ namespace EmulatorGui {
             // Mark end of execution
             _requestStop = false;
             _executing   = false;
-            BeginInvoke(() => { ExecutionEnd(); });
+            BeginInvoke(() => { UnlockOptions(); });
         }
         private void MemoryChanged() {
             RefreshListBox(lbMemory);
@@ -266,7 +299,7 @@ namespace EmulatorGui {
             SelectPCInstruction();
         }
         private void lbInstructions_DoubleClick(object sender, EventArgs e) {
-            if (Utility.ErrorSound(!_executing)) return;
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
             InstructionView view = (lbInstructions.SelectedItem as InstructionView)!;
             _instructionEditor.Set(view.Memory, view.Address);
             _instructionEditor.ShowDialog();
@@ -287,8 +320,8 @@ namespace EmulatorGui {
                 }
             }
             catch (Exception e) {
-                Utility.ErrorSound(false);
-                MessageBox.Show(e.Message, "Gre�ka");
+                Assert.IfFalse(false);
+                MessageBox.Show(e.Message, "Greška");
                 return;
             }
             MemoryChanged();
@@ -309,17 +342,19 @@ namespace EmulatorGui {
                 }
             }
             catch (Exception e) {
-                Utility.ErrorSound(false);
-                MessageBox.Show(e.Message, "Gre�ka");
+                Assert.IfFalse(false);
+                MessageBox.Show(e.Message, "Greška");
                 return;
             }
             MemoryChanged();
         }
 
         private void btnLoadClick(object sender, EventArgs e) {
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
+
             _load.Filter = "Binarni fajlovi|*.bin";
             if (_load.ShowDialog() != DialogResult.OK)     return;
-            if (Utility.ErrorSound(_load.CheckFileExists)) return;
+            if (Assert.IfFalse(_load.CheckFileExists)) return;
 
             msReload.Enabled = true;
             msSave.Enabled   = true;
@@ -330,6 +365,8 @@ namespace EmulatorGui {
             LoadFromFile();
         }
         private void btnSaveAsClick(object sender, EventArgs e) {
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
+
             _save.Filter = "Binarni fajlovi|*.bin";
             if (_save.ShowDialog() != DialogResult.OK)     return;
 
@@ -342,38 +379,54 @@ namespace EmulatorGui {
             SaveToFile();
         }
         private void msSave_Click(object sender, EventArgs e) {
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
+
             SaveToFile();
         }
-
         private void msReload_Click(object sender, EventArgs e) {
+            if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
+
             LoadFromFile();
         }
+
         // - - - - - - - - - - - - - - - - - - - -
         // C O N T R O L S- - - - - - - - - - - -
         // - - - - - - - - - - - - - - - - - - -
 
-        private void ExecutionBegin() {
+        private void LockOptions() {
             btnClear.Enabled        = false;
             btnCopy.Enabled         = false;
             btnResize.Enabled       = false;
             btnSearch.Enabled       = false;
             btnStep.Enabled         = false;
             btnExecuteUntil.Enabled = false;
+
+            msLoad.Enabled          = false;
+            msReload.Enabled        = false;
+            msSaveAs.Enabled        = false;
+            msSave.Enabled          = false;
+
             btnStopExec.Enabled     = true;
         }
-        private void ExecutionEnd() { 
+        private void UnlockOptions() { 
             btnClear.Enabled        = true;
             btnCopy.Enabled         = true;
             btnResize.Enabled       = true;
             btnSearch.Enabled       = true;
             btnStep.Enabled         = true;
             btnExecuteUntil.Enabled = true;
+
+            msLoad.Enabled          = true;
+            msReload.Enabled        = _load.FileName != "";
+            msSaveAs.Enabled          = true;
+            msSave.Enabled        = _save.FileName != "";
+
             btnStopExec.Enabled     = false;
             RefreshDisplay();
         }
         
         private void btnStep_Click(object sender, EventArgs e) {
-            if (Utility.ErrorSound(!_executing)) return;
+            if (Assert.IfFalse(!_executing)) return;
             _processor.HandleInterrupt(_processor.Execute());
             UpdateStepButton();
             RefreshListBox(lbRegisters);
@@ -382,14 +435,27 @@ namespace EmulatorGui {
             SelectPCInstruction();
         }
         private void btnExecuteUntil_Click(object sender, EventArgs e) {
-            if (Utility.ErrorSound(!_executing)) return;
+            if (Assert.IfFalse(!_executing)) return;
+            
             _executionThread = new Thread(ExecuteUntilThreadFunct);
             _executionThread.Start();
         }
-        private void btnStopExec_Click(object sender, EventArgs e) { 
-            _requestStop = true;
-        }
+        private void btnStopExec_Click(object sender, EventArgs e) {  _requestStop = true; }
 
-
+        Assert.Reason _reasonExecuting = new(
+            "Greška", 
+            "Operaciju nemoguće izvršiti dok se kod izvršava.");
+        Assert.Reason _reasonAddrNotValid = new(
+            "Greška",
+            "Operaciju nemoguće izvršiti - Uneta adresa nije validna.");
+        Assert.Reason _reasonResizeNotValid = new(
+            "Greška",
+            "Operaciju nemoguće izvršiti - Uneta veličina nije validna.");
+        Assert.Reason _reasonAddrRangeNotValid = new(
+            "Greška",
+            "Operaciju nemoguće izvršiti - Unet opseg adresa nije validan.");
+        Assert.Reason _reasonClearValueNotValid = new(
+            "Greška",
+            "Operaciju nemoguće izvršiti - Uneta vrednost nije validna.");
     }
 }

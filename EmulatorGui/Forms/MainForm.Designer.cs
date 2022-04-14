@@ -100,7 +100,7 @@
             // msLoad
             // 
             this.msLoad.Name = "msLoad";
-            this.msLoad.Size = new System.Drawing.Size(180, 22);
+            this.msLoad.Size = new System.Drawing.Size(179, 22);
             this.msLoad.Text = "Učitaj iz fajla";
             this.msLoad.Click += new System.EventHandler(this.btnLoadClick);
             // 
@@ -108,14 +108,14 @@
             // 
             this.msReload.Enabled = false;
             this.msReload.Name = "msReload";
-            this.msReload.Size = new System.Drawing.Size(180, 22);
+            this.msReload.Size = new System.Drawing.Size(179, 22);
             this.msReload.Text = "Osveži";
             this.msReload.Click += new System.EventHandler(this.msReload_Click);
             // 
             // msSaveAs
             // 
             this.msSaveAs.Name = "msSaveAs";
-            this.msSaveAs.Size = new System.Drawing.Size(180, 22);
+            this.msSaveAs.Size = new System.Drawing.Size(179, 22);
             this.msSaveAs.Text = "Sačuvaj kao";
             this.msSaveAs.Click += new System.EventHandler(this.btnSaveAsClick);
             // 
@@ -123,7 +123,7 @@
             // 
             this.msSave.Enabled = false;
             this.msSave.Name = "msSave";
-            this.msSave.Size = new System.Drawing.Size(180, 22);
+            this.msSave.Size = new System.Drawing.Size(179, 22);
             this.msSave.Text = "Sačuvaj";
             this.msSave.Click += new System.EventHandler(this.msSave_Click);
             // 
@@ -149,6 +149,7 @@
             this.btnStep.Name = "btnStep";
             this.btnStep.Size = new System.Drawing.Size(76, 22);
             this.btnStep.TabIndex = 1;
+            this.btnStep.TabStop = false;
             this.btnStep.UseVisualStyleBackColor = true;
             this.btnStep.Click += new System.EventHandler(this.btnStep_Click);
             // 
@@ -162,6 +163,7 @@
             this.lbRegisters.Name = "lbRegisters";
             this.lbRegisters.Size = new System.Drawing.Size(300, 450);
             this.lbRegisters.TabIndex = 2;
+            this.lbRegisters.TabStop = false;
             this.lbRegisters.DoubleClick += new System.EventHandler(this.lbRegisters_DoubleClick);
             // 
             // lbSearch
@@ -178,9 +180,10 @@
             this.tbResize.Location = new System.Drawing.Point(6, 248);
             this.tbResize.MaxLength = 16;
             this.tbResize.Name = "tbResize";
+            this.tbResize.PlaceholderText = "Decimalna vrednost";
             this.tbResize.Size = new System.Drawing.Size(188, 22);
             this.tbResize.TabIndex = 29;
-            this.tbResize.Text = "0000";
+            this.tbResize.TabStop = false;
             // 
             // lbCapacity
             // 
@@ -197,6 +200,7 @@
             this.btnResize.Name = "btnResize";
             this.btnResize.Size = new System.Drawing.Size(188, 23);
             this.btnResize.TabIndex = 28;
+            this.btnResize.TabStop = false;
             this.btnResize.Text = "Promeni veličinu";
             this.btnResize.UseVisualStyleBackColor = true;
             this.btnResize.Click += new System.EventHandler(this.btnResize_Click);
@@ -207,6 +211,7 @@
             this.btnSearch.Name = "btnSearch";
             this.btnSearch.Size = new System.Drawing.Size(30, 22);
             this.btnSearch.TabIndex = 7;
+            this.btnSearch.TabStop = false;
             this.btnSearch.Text = ">>";
             this.btnSearch.UseVisualStyleBackColor = true;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
@@ -216,9 +221,10 @@
             this.tbSearch.Location = new System.Drawing.Point(6, 327);
             this.tbSearch.MaxLength = 4;
             this.tbSearch.Name = "tbSearch";
+            this.tbSearch.PlaceholderText = "HEX";
             this.tbSearch.Size = new System.Drawing.Size(40, 22);
             this.tbSearch.TabIndex = 6;
-            this.tbSearch.Text = "0000";
+            this.tbSearch.TabStop = false;
             // 
             // lbResize
             // 
@@ -235,6 +241,7 @@
             this.btnCopy.Name = "btnCopy";
             this.btnCopy.Size = new System.Drawing.Size(188, 23);
             this.btnCopy.TabIndex = 26;
+            this.btnCopy.TabStop = false;
             this.btnCopy.Text = "Kopiraj memoriju";
             this.btnCopy.UseVisualStyleBackColor = true;
             this.btnCopy.Click += new System.EventHandler(this.btnCopy_Click);
@@ -253,9 +260,10 @@
             this.tbDst.Location = new System.Drawing.Point(154, 165);
             this.tbDst.MaxLength = 4;
             this.tbDst.Name = "tbDst";
+            this.tbDst.PlaceholderText = "HEX";
             this.tbDst.Size = new System.Drawing.Size(40, 22);
             this.tbDst.TabIndex = 24;
-            this.tbDst.Text = "0000";
+            this.tbDst.TabStop = false;
             // 
             // lbSrcTo
             // 
@@ -280,18 +288,20 @@
             this.tbSrcTo.Location = new System.Drawing.Point(52, 165);
             this.tbSrcTo.MaxLength = 4;
             this.tbSrcTo.Name = "tbSrcTo";
+            this.tbSrcTo.PlaceholderText = "HEX";
             this.tbSrcTo.Size = new System.Drawing.Size(40, 22);
             this.tbSrcTo.TabIndex = 21;
-            this.tbSrcTo.Text = "0000";
+            this.tbSrcTo.TabStop = false;
             // 
             // tbSrcFrom
             // 
             this.tbSrcFrom.Location = new System.Drawing.Point(6, 165);
             this.tbSrcFrom.MaxLength = 4;
             this.tbSrcFrom.Name = "tbSrcFrom";
+            this.tbSrcFrom.PlaceholderText = "HEX";
             this.tbSrcFrom.Size = new System.Drawing.Size(40, 22);
             this.tbSrcFrom.TabIndex = 20;
-            this.tbSrcFrom.Text = "0000";
+            this.tbSrcFrom.TabStop = false;
             // 
             // lbCopy
             // 
@@ -308,6 +318,7 @@
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(188, 23);
             this.btnClear.TabIndex = 17;
+            this.btnClear.TabStop = false;
             this.btnClear.Text = "Očisti memoriju";
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
@@ -326,9 +337,10 @@
             this.tbClearValue.Location = new System.Drawing.Point(154, 69);
             this.tbClearValue.MaxLength = 2;
             this.tbClearValue.Name = "tbClearValue";
+            this.tbClearValue.PlaceholderText = "HEX";
             this.tbClearValue.Size = new System.Drawing.Size(40, 22);
             this.tbClearValue.TabIndex = 15;
-            this.tbClearValue.Text = "00";
+            this.tbClearValue.TabStop = false;
             // 
             // lbClearTo
             // 
@@ -353,9 +365,10 @@
             this.tbClearTo.Location = new System.Drawing.Point(52, 69);
             this.tbClearTo.MaxLength = 4;
             this.tbClearTo.Name = "tbClearTo";
+            this.tbClearTo.PlaceholderText = "HEX";
             this.tbClearTo.Size = new System.Drawing.Size(40, 22);
             this.tbClearTo.TabIndex = 12;
-            this.tbClearTo.Text = "FFFF";
+            this.tbClearTo.TabStop = false;
             // 
             // lbClearMemory
             // 
@@ -371,9 +384,10 @@
             this.tbClearFrom.Location = new System.Drawing.Point(6, 69);
             this.tbClearFrom.MaxLength = 4;
             this.tbClearFrom.Name = "tbClearFrom";
+            this.tbClearFrom.PlaceholderText = "HEX";
             this.tbClearFrom.Size = new System.Drawing.Size(40, 22);
             this.tbClearFrom.TabIndex = 10;
-            this.tbClearFrom.Text = "0000";
+            this.tbClearFrom.TabStop = false;
             // 
             // groupOptions
             // 
@@ -422,6 +436,7 @@
             this.btnStopExec.Name = "btnStopExec";
             this.btnStopExec.Size = new System.Drawing.Size(75, 23);
             this.btnStopExec.TabIndex = 37;
+            this.btnStopExec.TabStop = false;
             this.btnStopExec.Text = "ZAUSTAVI";
             this.btnStopExec.UseVisualStyleBackColor = true;
             this.btnStopExec.Click += new System.EventHandler(this.btnStopExec_Click);
@@ -432,6 +447,7 @@
             this.btnExecuteUntil.Name = "btnExecuteUntil";
             this.btnExecuteUntil.Size = new System.Drawing.Size(30, 22);
             this.btnExecuteUntil.TabIndex = 36;
+            this.btnExecuteUntil.TabStop = false;
             this.btnExecuteUntil.Text = ">>";
             this.btnExecuteUntil.UseVisualStyleBackColor = true;
             this.btnExecuteUntil.Click += new System.EventHandler(this.btnExecuteUntil_Click);
@@ -459,9 +475,10 @@
             this.tbExecuteUntil.Location = new System.Drawing.Point(6, 424);
             this.tbExecuteUntil.MaxLength = 4;
             this.tbExecuteUntil.Name = "tbExecuteUntil";
+            this.tbExecuteUntil.PlaceholderText = "HEX";
             this.tbExecuteUntil.Size = new System.Drawing.Size(40, 22);
             this.tbExecuteUntil.TabIndex = 33;
-            this.tbExecuteUntil.Text = "0000";
+            this.tbExecuteUntil.TabStop = false;
             // 
             // lbMemory
             // 
@@ -473,6 +490,7 @@
             this.lbMemory.Name = "lbMemory";
             this.lbMemory.Size = new System.Drawing.Size(350, 450);
             this.lbMemory.TabIndex = 10;
+            this.lbMemory.TabStop = false;
             this.lbMemory.DoubleClick += new System.EventHandler(this.lbMemory_DoubleClick);
             // 
             // lbInstructions
@@ -485,6 +503,7 @@
             this.lbInstructions.Name = "lbInstructions";
             this.lbInstructions.Size = new System.Drawing.Size(300, 450);
             this.lbInstructions.TabIndex = 31;
+            this.lbInstructions.TabStop = false;
             this.lbInstructions.DoubleClick += new System.EventHandler(this.lbInstructions_DoubleClick);
             // 
             // MainForm

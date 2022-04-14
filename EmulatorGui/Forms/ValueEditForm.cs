@@ -30,7 +30,7 @@ namespace EmulatorGui {
 
         private void btnSet_Click(object sender, EventArgs e) {
             NumberFormat? format = cbBase.SelectedItem as NumberFormat;
-            if (Utility.ErrorSound(format != null)) 
+            if (Assert.IfFalse(format != null)) 
                 return;
                         
             if (format!.From(tbValue.Text, out uint value)) {
@@ -38,12 +38,12 @@ namespace EmulatorGui {
                 Hide();
             }
             else {
-                Utility.ErrorSound(false);
+                Assert.IfFalse(false);
             }
         }
         void PresentView() {
             NumberFormat? format = cbBase.SelectedItem as NumberFormat;
-            if (Utility.ErrorSound(format != null))
+            if (Assert.IfFalse(format != null))
                 return;
             tbValue.Text = format!.To(_view!.Get());
         }

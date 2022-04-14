@@ -91,9 +91,6 @@ namespace EmulatorGui {
             tbOperand3.Text = format3.To(_instruction.Operand3);
         }
 
-        void Modify() { 
-        
-        }
         bool Encode() {
             OpCode code = (OpCode)cbInstruction.SelectedItem;
             uint count = (uint)numOpCount.Value;
@@ -107,7 +104,7 @@ namespace EmulatorGui {
             if (count > 2) success &= GetOperand(2, out op3);
 
             // Return if unparsable operands given
-            if (Utility.ErrorSound(success)) return false;
+            if (Assert.IfFalse(success)) return false;
 
             if (count == 0)
                 ins = EncoderDecoder.Custom(code);
@@ -127,7 +124,7 @@ namespace EmulatorGui {
                     (Mode)cbMode2.SelectedItem, op2,
                     (Mode)cbMode3.SelectedItem, op3);
             else {
-                Utility.ErrorSound(false);
+                Assert.IfFalse(false);
                 return false;
             }
             EncoderDecoder.Encode(
@@ -169,14 +166,14 @@ namespace EmulatorGui {
                 return true;
             }
             else {
-                Utility.ErrorSound(false);
+                Assert.IfFalse(false);
                 return false;
             }
         }
 
         private void btnApply_Click(object sender, EventArgs e) {
-            Encode();
-            Hide();
+            if(Encode())
+                Hide();
         }
     }
 }

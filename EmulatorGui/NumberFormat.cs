@@ -31,6 +31,8 @@ namespace EmulatorGui {
         }
         public override bool From(string text, out uint value) {
             value = 0;
+            if (text == "") return false;
+
             foreach (char c in text) {
                 if (c != '1' && c != '0') return false;
                 value = (value << 1) | (uint)(c == '1' ? 1 : 0);
@@ -50,15 +52,19 @@ namespace EmulatorGui {
         public override string To(uint value) => value.ToString( $"X{_length}" );
         public override bool From(string text, out uint value) {
             value = 0;
+            if (text == "") return false;
+
             foreach (char rd in text) {
                 char c = char.ToUpper(rd);
 
                 if (char.IsLetter(c))
-                    if (c > 'F') return false;
+                    if (c > 'F' || c < 'A') return false;
                     else value = (value << 4) | (uint)(c - 'A' + 10);
 
-                if (char.IsDigit(c))
+                else if (char.IsDigit(c))
                     value = (value << 4) | (uint)(c - '0');
+
+                else return false;
             }
 
             return true;

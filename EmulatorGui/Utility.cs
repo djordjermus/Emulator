@@ -20,12 +20,5 @@ namespace EmulatorGui {
                     return "n/a";
             }
         }
-
-        public static bool ErrorSound(bool condition) {
-            if (!condition)
-                System.Media.SystemSounds.Hand.Play();
-            return !condition;
-        }
-
     }
 }

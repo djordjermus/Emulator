@@ -74,21 +74,21 @@ namespace EmulatorGui {
             EncoderDecoder.Decode(_memory, _address, out _instruction);
         
         void Present() {
-            OpCode code = EncoderDecoder.GetOpCode(ref _instruction);
-            uint count  = EncoderDecoder.GetOpCount(ref _instruction);
+            OpCode code = _instruction.Operation;
+            uint count  = _instruction.OpCount;
             cbInstruction.SelectedItem = code;
             numOpCount.Value           = count;
 
-            NumberFormat format1 = cbFormat1.SelectedItem as NumberFormat;
-            NumberFormat format2 = cbFormat2.SelectedItem as NumberFormat;
-            NumberFormat format3 = cbFormat3.SelectedItem as NumberFormat;
+            NumberFormat format1 = (cbFormat1.SelectedItem as NumberFormat)!;
+            NumberFormat format2 = (cbFormat2.SelectedItem as NumberFormat)!;
+            NumberFormat format3 = (cbFormat3.SelectedItem as NumberFormat)!;
 
-            cbMode1.SelectedItem = EncoderDecoder.GetMode1(ref _instruction);
-            tbOperand1.Text = format1.To(_instruction.Operand1);
-            cbMode2.SelectedItem = EncoderDecoder.GetMode2(ref _instruction);
-            tbOperand2.Text = format2.To(_instruction.Operand2);
-            cbMode3.SelectedItem = EncoderDecoder.GetMode3(ref _instruction);
-            tbOperand3.Text = format3.To(_instruction.Operand3);
+            cbMode1.SelectedItem = _instruction.Mode1;
+            tbOperand1.Text      = format1.To(_instruction.Operand1);
+            cbMode2.SelectedItem = _instruction.Mode2;
+            tbOperand2.Text      = format2.To(_instruction.Operand2);
+            cbMode3.SelectedItem = _instruction.Mode3;
+            tbOperand3.Text      = format3.To(_instruction.Operand3);
         }
 
         bool Encode() {
@@ -107,18 +107,18 @@ namespace EmulatorGui {
             if (Assert.IfFalse(success)) return false;
 
             if (count == 0)
-                ins = EncoderDecoder.Custom(code);
+                ins = new Instruction(code);
             else if (count == 1)
-                ins = EncoderDecoder.Custom(
+                ins = new Instruction(
                     code,
                     (Mode)cbMode1.SelectedItem, op1);
             else if (count == 2)
-                ins = EncoderDecoder.Custom(
+                ins = new Instruction(
                     code,
                     (Mode)cbMode1.SelectedItem, op1,
                     (Mode)cbMode2.SelectedItem, op2);
             else if (count == 3)
-                ins = EncoderDecoder.Custom(
+                ins = new Instruction(
                     code,
                     (Mode)cbMode1.SelectedItem, op1,
                     (Mode)cbMode2.SelectedItem, op2,

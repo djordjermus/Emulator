@@ -61,8 +61,8 @@ namespace EmulatorGui {
             EncoderDecoder.Decode(_memory, _address, out Instruction instr);
 
             StringBuilder builder = new StringBuilder(40);
-            OpCode opcode = EncoderDecoder.GetOpCode(ref instr);
-            uint opct     = EncoderDecoder.GetOpCount(ref instr);
+            OpCode opcode = instr.Operation;
+            uint opct     = instr.OpCount;
             
             builder.Append(_address.ToString("X4"));
             builder.Append(' ');
@@ -70,21 +70,21 @@ namespace EmulatorGui {
 
             if (opct > 0) {
                 builder.Append(' ');
-                Mode mode = EncoderDecoder.GetMode1(ref instr);
+                Mode mode = instr.Mode1;
                 builder.Append(Utility.ModeToShortString(mode));
                 builder.Append(' ');
                 builder.Append(instr.Operand1.ToString("X4"));
             }
             if (opct > 1) {
                 builder.Append("  ");
-                Mode mode = EncoderDecoder.GetMode2(ref instr);
+                Mode mode = instr.Mode2;
                 builder.Append(Utility.ModeToShortString(mode));
                 builder.Append(' ');
                 builder.Append(instr.Operand2.ToString("X4"));
             }
             if (opct > 2) { 
                 builder.Append("  ");
-                Mode mode = EncoderDecoder.GetMode3(ref instr);
+                Mode mode = instr.Mode3;
                 builder.Append(Utility.ModeToShortString(mode));
                 builder.Append(' ');
                 builder.Append(instr.Operand3.ToString("X4"));

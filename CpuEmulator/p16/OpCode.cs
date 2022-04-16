@@ -13,7 +13,7 @@ namespace CpuEmulator.p16 {
         // A/B/C => addressing mode of op1/2/3
         // * => unused
         //          XXXXXX_YY_AABBCC**
-        noop    = 0b000000_00_00000000,
+        noop    = 0b0000_00_00_00000000,
         
         // Memory management
 
@@ -64,8 +64,8 @@ namespace CpuEmulator.p16 {
         neq     = 0b1001_01_00_00000000, // Not Equals
         ugt     = 0b1001_10_00_00000000, // Unsigned greater than
         ult     = 0b1001_11_00_00000000, // Unsigned lesser than
-        sgt     = 0b1010_10_10_00000000, // Signed greater than
-        slt     = 0b1010_11_11_00000000, // Signed lesser than
+        sgt     = 0b1010_00_00_00000000, // Signed greater than
+        slt     = 0b1010_01_00_00000000, // Signed lesser than
         
         // Jumps
 

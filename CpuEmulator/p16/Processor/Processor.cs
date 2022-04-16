@@ -7,17 +7,13 @@ using System.Threading.Tasks;
 namespace CpuEmulator.p16 {
     using EncDec = EncoderDecoder;
     public partial class Processor {
-        public delegate void SetCallback(uint registerIndex);
         public delegate void ExecuteCallback();
 
         public Processor(Memory memory) {
             Memory = memory;
         }
         public Memory Memory { get; set; }
-        public event SetCallback OnSet {
-            add => _onSet += value;
-            remove => _onSet = (_onSet - value)!;
-        }
+
         public event ExecuteCallback OnExecute {
             add => _onExecute += value;
             remove => _onExecute = (_onExecute - value)!;
@@ -28,7 +24,7 @@ namespace CpuEmulator.p16 {
 
         // Fetches next instruction, advances PC
         // !!!Does not handle interrupt!!!
-        private Interrupt Fetch(out Instruction instruction) {
+        public Interrupt Fetch(out Instruction instruction) {
             // READ INSTRUCTION
             ushort len = (ushort)EncDec.Decode(Memory, _reg[IX_PC], out instruction);
 
@@ -44,71 +40,84 @@ namespace CpuEmulator.p16 {
 
         // Evaluates single operand
         // !!!Does not handle interrupt!!!
-        public Interrupt Evaluate(Mode mode, ushort op, out ushort value) {
+        public Interrupt Evaluate(Mode mode, ushort op, out ushort value, uint opix = 0) {
             value = 0;
 
-            switch (mode) {
-                case Mode.immediate:
-                    value = op;
+            if (mode == Mode.immediate) {
+                // BLIT VALUE
+                value = op;
 
-                    return Interrupt.none;
+                // NO INTERRUPT
+                return Interrupt.none;
+            }
+            if (mode == Mode.register) {
+                // VALIDATE REGISTER
+                if (!ValidRegister(op)) return Interrupt.badRegister;
 
-                case Mode.register:
-                    if (!ValidRegister(op))
-                        return Interrupt.badRegister;
-                    value = _reg[op];
+                // READ REGISTER
+                value = _reg[op];
+                
+                // NO INTERRUPT
+                return Interrupt.none;
+            }
 
-                    return Interrupt.none;
+            // CALCULATE INDEX
+            ushort index = 0;
+            if (opix < 4)
+                Get(opix + IX_IXR0, out index);
 
-                case Mode.direct:
-                    if (!Memory.CanAccess(op + 1u))
-                        return Interrupt.badAddress;
-                    value = Memory[op];
+            if (mode == Mode.direct) {
+                uint addr = (uint)(op + index);
 
-                    return Interrupt.none;
+                // VALIDATE ADDRESS
+                if (!Memory.CanAccessRange(addr, 2)) return Interrupt.badAddress;
 
-                case Mode.registerDirect:
-                    if (!ValidRegister(op))
-                        return Interrupt.badRegister;
-                    uint addr = _reg[op];
+                // READ MEMORY
+                value = Memory[addr];
 
-                    if (!Memory.CanAccess(addr + 1u))
-                        return Interrupt.badAddress;
-                    value = Memory[addr];
+                // NO INTERRUPT
+                return Interrupt.none;
+            }
+            if (mode == Mode.registerDirect) {
+                // VALIDATE REGISTER
+                if (!ValidRegister(op)) return Interrupt.badRegister;
 
-                    return Interrupt.none;
+                // READ REGISTER
+                uint addr = (uint)(_reg[op] + index);
+
+                // VALIDATE ADDRESS
+                if (!Memory.CanAccessRange(addr, 2)) return Interrupt.badAddress;
+
+                // READ MEMORY
+                value = Memory[addr];
+
+                return Interrupt.none;
             }
             return Interrupt.badInstruction;
         }
 
         // Decomposes instruction and evaluates its operands
         // !!!Does not handle interrupt!!!
-        public Interrupt Decompose(
+        public Interrupt Evaluate(
             ref Instruction instruction,
-            out OpCode operationCode, out uint opCount,
             out ushort value1, out ushort value2, out ushort value3) {
-
-            //
-            // Resolve instruction and operands
-            operationCode = EncDec.GetOpCode(ref instruction);
-            opCount = EncDec.GetOpCount(ref instruction);
 
             Interrupt[] i = new Interrupt[3] { Interrupt.none, Interrupt.none, Interrupt.none };
 
-            if (opCount > 0)
+            if (instruction.OpCount > 0)
                 i[0] = Evaluate(
-                    EncDec.GetMode1(ref instruction),
-                    (ushort)instruction.Operand1, out value1);
+                    instruction.Mode1,
+                    instruction.Operand1, out value1, 0);
             else value1 = 0;
-            if (opCount > 1)
+            if (instruction.OpCount > 1)
                 i[1] = Evaluate(
-                    EncDec.GetMode2(ref instruction),
-                    (ushort)instruction.Operand2, out value2);
+                    instruction.Mode2,
+                    instruction.Operand2, out value2, 1);
             else value2 = 0;
-            if (opCount > 2)
+            if (instruction.OpCount > 2)
                 i[2] = Evaluate(
-                    EncDec.GetMode3(ref instruction),
-                    (ushort)instruction.Operand3, out value3);
+                    instruction.Mode3,
+                    instruction.Operand3, out value3, 2);
             else value3 = 0;
 
             // Validate that operators are properly evaluated
@@ -122,9 +131,15 @@ namespace CpuEmulator.p16 {
         // Executes decomposed instruction
         // !!!Does not handle interrupt!!!
         public Interrupt Execute(
-            OpCode opcode, uint opcount,
-            ushort v1, ushort v2, ushort v3) {
+            ref Instruction instruction) {
 
+            OpCode opcode = instruction.Operation;
+            uint opcount = instruction.OpCount;
+
+            Interrupt interrupt = Evaluate(
+                ref instruction,
+                out ushort v1, out ushort v2, out ushort v3);
+            if (interrupt != Interrupt.none) return interrupt;
             switch (opcode) {
                 case OpCode.noop:
                     return Interrupt.none;
@@ -217,38 +232,22 @@ namespace CpuEmulator.p16 {
             }
         }
 
-        // Fetches, Decomposes, then executes instruction
+        // Fetches, then executes instruction
         // !!!Does not handle interrupt!!!
         public Interrupt Execute() {
-            Interrupt interrupt = Interrupt.none;
-
 
             // - - - - - - - - - - - -
             // F E T C H- - - - - - -
             // - - - - - - - - - - -
 
-            interrupt = Fetch(out Instruction instruction);
+            Interrupt interrupt = Fetch(out Instruction instruction);
             if (interrupt != Interrupt.none) return interrupt;
-
-
-            // - - - - - - - - - - - - -
-            // D E C O M P O S E- - - -
-            // - - - - - - - - - - - -
-
-            interrupt = Decompose(
-                ref instruction,
-                out OpCode opcode, out uint opcount,
-                out ushort v1, out ushort v2, out ushort v3);
-            if (interrupt != Interrupt.none) return interrupt;
-
 
             // - - - - - - - - - - - -
             // E X E C U T E- - - - -
             // - - - - - - - - - - -
 
-            interrupt = Execute(
-                opcode, opcount,
-                v1, v2, v3);
+            interrupt = Execute(ref instruction);
             return interrupt;
         }
 
@@ -266,7 +265,6 @@ namespace CpuEmulator.p16 {
         static bool ToBool(ushort val) => val != 0;
         static ushort ToNum(bool val) => val ? (ushort)1 : (ushort)0;
 
-        SetCallback _onSet = (x) => { };
         ExecuteCallback _onExecute = () => {};
     }
 }

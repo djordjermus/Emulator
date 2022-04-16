@@ -8,22 +8,34 @@ namespace CpuEmulator.p16 {
     public static partial class EncoderDecoder {
         
         public static uint Encode(Memory memory, uint address, ref Instruction instruction) {
-            uint opct = GetOpCount(ref instruction);
             
             // Test if instruction fits memory
-            if (!memory.CanAccessRange(address, 2 + 2 * opct)) 
+            if (!memory.CanAccessRange(address, 2 + 2 * instruction.OpCount)) 
                 return 0;
 
-            // Encode operation
-            memory.Write(address, (ushort)instruction.Operation);
-            if(opct > 0)
-                memory.Write(address + 2, (ushort)instruction.Operand1);
-            if (opct > 1)
-                memory.Write(address + 4, (ushort)instruction.Operand2);
-            if (opct > 2)
-                memory.Write(address + 6, (ushort)instruction.Operand3);
+            // Compose core (OpCode + OpCt + m1? + m2? + m3?)
+            ushort core = 0;
+            core |= (ushort)instruction.Operation;
+            core |= (ushort)((instruction.OpCount & 0b11) << 8);
+            if (instruction.OpCount > 0)
+                core |= (ushort)(((uint)instruction.Mode1 & 0b11) << 6);
+            if (instruction.OpCount > 1)
+                core |= (ushort)(((uint)instruction.Mode2 & 0b11) << 4);
+            if (instruction.OpCount > 2)
+                core |= (ushort)(((uint)instruction.Mode3 & 0b11) << 2);
 
-            return 2 + opct * 2;
+            // Write core
+            memory.Write(address, core);
+
+            // Write operands
+            if(instruction.OpCount > 0)
+                memory.Write(address + 2, instruction.Operand1);
+            if (instruction.OpCount > 1)
+                memory.Write(address + 4, instruction.Operand2);
+            if (instruction.OpCount > 2)
+                memory.Write(address + 6, instruction.Operand3);
+
+            return 2 + instruction.OpCount * 2;
         }
         public static uint Decode(Memory memory, uint address, out Instruction instruction) {
             instruction = new Instruction();
@@ -33,47 +45,37 @@ namespace CpuEmulator.p16 {
                 return 0;
 
             // Read operation
-            ushort st = 0;
-            memory.Read(address, out st);
-            instruction.Operation = st;
-
+            memory.Read(address, out ushort core);
+            instruction.Operation = (OpCode)(core & 0b11111100_00000000);
+            
             // Read operands
-            uint opct = GetOpCount(ref instruction);
+            instruction.OpCount = (uint)((core >> 8) & 0b11);
             // Test if operands are readable
-            if (!memory.CanAccessRange(address, 2 + 2 * opct))
+            if (!memory.CanAccessRange(address, 2 + 2 * instruction.OpCount))
                 return 0;
 
-            ushort rd = 0;
-            if (opct > 0) { 
+            if (instruction.OpCount > 0)
+                instruction.Mode1 = (Mode)((core >> 6) & 0b11);
+            if (instruction.OpCount > 1)
+                instruction.Mode2 = (Mode)((core >> 4) & 0b11);
+            if (instruction.OpCount > 2)
+                instruction.Mode3 = (Mode)((core >> 2) & 0b11);
+
+            ushort rd;
+            if (instruction.OpCount > 0) { 
                 memory.Read(address + 2, out rd);
                 instruction.Operand1 = rd;
             }
-            if (opct > 1) { 
+            if (instruction.OpCount > 1) { 
                 memory.Read(address + 4, out rd);
                 instruction.Operand2 = rd;
             }
-            if (opct > 2) { 
+            if (instruction.OpCount > 2) { 
                 memory.Read(address + 6, out rd);
                 instruction.Operand3 = rd;
             }
 
-            return 2 + opct * 2;
-        }
-
-        public static OpCode GetOpCode(ref Instruction instruction) { 
-            return (OpCode)((instruction.Operation >> opCodeOffset) & opCodeMask);
-        }
-        public static uint GetOpCount(ref Instruction instruction) {
-            return (instruction.Operation >> opCountOffset) & opCountMask;
-        }
-        public static Mode GetMode1(ref Instruction instruction) {
-            return (Mode)((instruction.Operation >> mode1Offset) & modeMask);
-        }
-        public static Mode GetMode2(ref Instruction instruction) {
-            return (Mode)((instruction.Operation >> mode2Offset) & modeMask);
-        }
-        public static Mode GetMode3(ref Instruction instruction) {
-            return (Mode)((instruction.Operation >> mode3Offset) & modeMask);
+            return 2 + instruction.OpCount * 2;
         }
 
         // CONSTANTS

@@ -18,7 +18,6 @@ namespace CpuEmulator.p16 {
         public bool Set(uint ix, ushort value) {
             if (ix < 32) { 
                 _reg[ix] = value;
-                _onSet.Invoke(ix);
                 return true;
             }
             return false;

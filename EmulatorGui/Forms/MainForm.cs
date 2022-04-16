@@ -199,7 +199,7 @@ namespace EmulatorGui {
                 uint width = EncoderDecoder.Decode(
                     _processor.Memory, 
                     addr, 
-                    out CpuEmulator.Instruction ins);
+                    out Instruction ins);
             
                 views.Add(new InstructionView(_processor.Memory, addr));
 
@@ -216,7 +216,7 @@ namespace EmulatorGui {
                 uint width = EncoderDecoder.Decode(
                     _processor.Memory,
                     addr,
-                    out CpuEmulator.Instruction ins);
+                    out Instruction ins);
 
                 views[i].Address     = addr;
                 views[i].Instruction = ins;
@@ -456,6 +456,5 @@ namespace EmulatorGui {
         Assert.Reason _reasonClearValueNotValid = new(
             "Greška",
             "Operaciju nemoguće izvršiti - Uneta vrednost nije validna.");
-
     }
 }

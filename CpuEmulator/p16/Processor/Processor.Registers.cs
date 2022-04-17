@@ -32,7 +32,7 @@ namespace CpuEmulator.p16 {
         }
 
         public bool CarryFlag     { 
-            get => (_reg[IX_ST] & 0b00000001) == 1;
+            get => (_reg[IX_ST] & 0b00000001) != 0;
             set {
                 if (value) 
                     _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000001);
@@ -41,7 +41,7 @@ namespace CpuEmulator.p16 {
             }
         }
         public bool ZeroFlag      { 
-            get => (_reg[IX_ST] & 0b00000010) == 1;
+            get => (_reg[IX_ST] & 0b00000010) != 0;
             set {
                 if (value)
                     _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000010);
@@ -50,7 +50,7 @@ namespace CpuEmulator.p16 {
             }
         }
         public bool SignFlag      { 
-            get => (_reg[IX_ST] & 0b00000100) == 1;
+            get => (_reg[IX_ST] & 0b00000100) != 0;
             set {
                 if (value)
                     _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000100);
@@ -59,7 +59,7 @@ namespace CpuEmulator.p16 {
             }
         }
         public bool OverflowFlag  { 
-            get => (_reg[IX_ST] & 0b00001000) == 1;
+            get => (_reg[IX_ST] & 0b00001000) != 0;
             set {
                 if (value)
                     _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00001000);
@@ -68,7 +68,7 @@ namespace CpuEmulator.p16 {
             }
         }
         public bool InterruptFlag { 
-            get => (_reg[IX_ST] & 0b00010000) == 1;
+            get => (_reg[IX_ST] & 0b00010000) != 0;
             set {
                 if (value)
                     _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00010000);

@@ -272,7 +272,7 @@ namespace CpuEmulator.p16 {
                 ushort new_pc = _reg[(int)i];
 
                 if(new_pc != 0)
-                    Set(IX_PC, _reg[(int)i]);
+                    Set(IX_PC, new_pc);
 
                 return true;
             }

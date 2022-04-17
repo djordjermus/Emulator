@@ -66,7 +66,8 @@ namespace CpuEmulator.p16 {
         ult     = 0b1001_11_00_00000000, // Unsigned lesser than
         sgt     = 0b1010_00_00_00000000, // Signed greater than
         slt     = 0b1010_01_00_00000000, // Signed lesser than
-        
+        tst     = 0b1010_10_00_00000000, // Test(SF I ZF)
+
         // Jumps
 
         jmp     = 0b1011_00_00_00000000, // Jump unconditionally

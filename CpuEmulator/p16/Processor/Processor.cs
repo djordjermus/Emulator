@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 namespace CpuEmulator.p16 {
     using EncDec = EncoderDecoder;
     public partial class Processor {
-        public delegate void ExecuteCallback();
 
         public Processor(Memory memory) {
-            Memory = memory;
+            // Link memory
+            Memory        = memory;
+
+            // Enable interrupts
+            InterruptFlag = true;
         }
         public Memory Memory { get; set; }
 
-        public event ExecuteCallback OnExecute {
-            add => _onExecute += value;
-            remove => _onExecute = (_onExecute - value)!;
-        }
+
         // - - - - - - - - - - - - - - - - -
         // R E L E V A N T   C O D E- - - -
         // - - - - - - - - - - - - - - - -
@@ -29,8 +29,8 @@ namespace CpuEmulator.p16 {
             ushort len = (ushort)EncDec.Decode(Memory, _reg[IX_PC], out instruction);
 
             // FAILIURE TO READ INSTRUCTION
-            if (len == 0)
-                return Interrupt.badPcValue;
+            if (len != (2 + instruction.OpCount * 2))
+                return Interrupt.badPc;
 
             // MOVE PC
             Set(IX_PC, (ushort)(_reg[IX_PC] + len));
@@ -70,7 +70,7 @@ namespace CpuEmulator.p16 {
                 uint addr = (uint)(op + index);
 
                 // VALIDATE ADDRESS
-                if (!Memory.CanAccessRange(addr, 2)) return Interrupt.badAddress;
+                if (!Memory.CanAccess(addr, 2)) return Interrupt.badAddress;
 
                 // READ MEMORY
                 value = Memory[addr];
@@ -86,7 +86,7 @@ namespace CpuEmulator.p16 {
                 uint addr = (uint)(_reg[op] + index);
 
                 // VALIDATE ADDRESS
-                if (!Memory.CanAccessRange(addr, 2)) return Interrupt.badAddress;
+                if (!Memory.CanAccess(addr, 2)) return Interrupt.badAddress;
 
                 // READ MEMORY
                 value = Memory[addr];
@@ -180,7 +180,7 @@ namespace CpuEmulator.p16 {
                 case OpCode.sub:
                 case OpCode.mul:
                 case OpCode.div:
-                    // ___ REG VAL / ___ REG VAL VAL
+                    // REG VAL / REG VAL VAL
                     return OpArithmetic(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - 
@@ -193,7 +193,7 @@ namespace CpuEmulator.p16 {
                 case OpCode.lsl:
                 case OpCode.lsr:
                 case OpCode.binv:
-                    // ___ REG VAL / REG VAL VAL
+                    // REG VAL / REG VAL VAL
                     return OpBitwise(opcode, v1, v2, v3, (ushort)opcount);
 
                 // - - - - - - - - - - - - - 
@@ -216,13 +216,19 @@ namespace CpuEmulator.p16 {
                 case OpCode.ult:
                 case OpCode.sgt:
                 case OpCode.slt:
-                    // ___ REG VAL / ___ REG VAL VAL
+                    // REG VAL / REG VAL VAL
                     return OpComparison(opcode, v1, v2, v3, (ushort)opcount);
 
+                    // VAL
+                case OpCode.tst:
+                    if (opcount != 1) return Interrupt.badInstruction;
+                    OpTest(v1);
+                    return Interrupt.none;
+
                 case OpCode.jmp:  // ADDR
-                case OpCode.rjmp: // ADDR
                 case OpCode.jeq:  // ADDR LHS RHS
                 case OpCode.jne:  // ADDR LHS RHS
+                case OpCode.rjmp: // ADDR
                 case OpCode.rjeq: // ADDR LHS RHS
                 case OpCode.rjne: // ADDR LHS RHS
                     return OpJump(opcode, v1, v2, v3, (ushort)opcount);
@@ -251,11 +257,23 @@ namespace CpuEmulator.p16 {
             return interrupt;
         }
 
+        // Fetches, then executes instruction
+        // !!!Handles interrupt!!!
+        public Interrupt HandledExecute() {
+            Interrupt interrupt = Execute();
+            HandleInterrupt(interrupt);
+            return interrupt;
+        }
+        
         // Handles given interrupt if its valid
         // Returns true if interrupt is handled, otherwise false
         public bool HandleInterrupt(Interrupt i) {
-            if ((int)i >= IX_IRR0 && (int)i <= IX_IRR7) {
-                Set(IX_PC, _reg[(int)i]);
+            if ((int)i >= IX_IRR0 && (int)i <= IX_IRR7 && InterruptFlag) {
+                ushort new_pc = _reg[(int)i];
+
+                if(new_pc != 0)
+                    Set(IX_PC, _reg[(int)i]);
+
                 return true;
             }
             return false;
@@ -264,7 +282,5 @@ namespace CpuEmulator.p16 {
         public static bool ValidRegister(uint ix) => ix < 32;
         static bool ToBool(ushort val) => val != 0;
         static ushort ToNum(bool val) => val ? (ushort)1 : (ushort)0;
-
-        ExecuteCallback _onExecute = () => {};
     }
 }

@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace CpuEmulator.p16 {
     public static partial class EncoderDecoder {
-        
         public static uint Encode(Memory memory, uint address, ref Instruction instruction) {
             
             // Test if instruction fits memory
-            if (!memory.CanAccessRange(address, 2 + 2 * instruction.OpCount)) 
+            if (!memory.CanAccess(address, 2 + 2 * instruction.OpCount)) 
                 return 0;
 
             // Compose core (OpCode + OpCt + m1? + m2? + m3?)
@@ -25,23 +24,30 @@ namespace CpuEmulator.p16 {
                 core |= (ushort)(((uint)instruction.Mode3 & 0b11) << 2);
 
             // Write core
-            memory.Write(address, core);
+            if (memory.CanAccess(address, 2))
+                memory.Write(address, core);
+            else return 0;
 
             // Write operands
-            if(instruction.OpCount > 0)
+            if (instruction.OpCount > 0 && memory.CanAccess(address + 2, 2))
                 memory.Write(address + 2, instruction.Operand1);
-            if (instruction.OpCount > 1)
-                memory.Write(address + 4, instruction.Operand2);
-            if (instruction.OpCount > 2)
-                memory.Write(address + 6, instruction.Operand3);
+            else return 2;
 
-            return 2 + instruction.OpCount * 2;
+            if (instruction.OpCount > 1 && memory.CanAccess(address + 4, 2))
+                memory.Write(address + 4, instruction.Operand2);
+            else return 4;
+
+            if (instruction.OpCount > 2 && memory.CanAccess(address + 6, 2))
+                memory.Write(address + 6, instruction.Operand3);
+            else return 6;
+
+            return 8;
         }
         public static uint Decode(Memory memory, uint address, out Instruction instruction) {
             instruction = new Instruction();
 
             // Test if operation is readable
-            if (!memory.CanAccessRange(address, 2))
+            if (!memory.CanAccess(address, 2))
                 return 0;
 
             // Read operation
@@ -51,7 +57,7 @@ namespace CpuEmulator.p16 {
             // Read operands
             instruction.OpCount = (uint)((core >> 8) & 0b11);
             // Test if operands are readable
-            if (!memory.CanAccessRange(address, 2 + 2 * instruction.OpCount))
+            if (!memory.CanAccess(address, 2 + 2 * instruction.OpCount))
                 return 0;
 
             if (instruction.OpCount > 0)
@@ -62,38 +68,19 @@ namespace CpuEmulator.p16 {
                 instruction.Mode3 = (Mode)((core >> 2) & 0b11);
 
             ushort rd;
-            if (instruction.OpCount > 0) { 
-                memory.Read(address + 2, out rd);
+            if (instruction.OpCount > 0 && memory.Read(address + 2, out rd) == 2)
                 instruction.Operand1 = rd;
-            }
-            if (instruction.OpCount > 1) { 
-                memory.Read(address + 4, out rd);
+            else return 2;
+
+            if (instruction.OpCount > 1 && memory.Read(address + 4, out rd) == 2) 
                 instruction.Operand2 = rd;
-            }
-            if (instruction.OpCount > 2) { 
-                memory.Read(address + 6, out rd);
+            else return 4;
+
+            if (instruction.OpCount > 2 && memory.Read(address + 6, out rd) == 2)
                 instruction.Operand3 = rd;
-            }
+            else return 6;
 
-            return 2 + instruction.OpCount * 2;
+            return 8;
         }
-
-        // CONSTANTS
-
-        public const int opCodeOffset  = 0;
-        public const uint opCodeMask   = 0b11111100_00000000;
-
-        public const int opCountOffset = 8;
-        public const uint opCountMask  = 0b00000000_00000011;
-
-        public const int  mode1Offset  = 6;
-        public const int  mode2Offset  = 4;
-        public const int  mode3Offset  = 2;
-        public const uint modeMask     = 0b00000000_00000011;
-
-        public const uint zeroOperands  = 0b000000_00_00000000;
-        public const uint oneOperands   = 0b000000_01_00000000;
-        public const uint twoOperands   = 0b000000_10_00000000;
-        public const uint threeOperands = 0b000000_11_00000000;
     }
 }

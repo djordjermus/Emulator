@@ -11,7 +11,7 @@ namespace CpuEmulator.p16 {
         stackunderflow  = 0x19,
         badRegister     = 0x1A,
         badAddress      = 0x1B,
-        badPcValue      = 0x1C,
+        badPc           = 0x1C,
         badInstruction  = 0x1D,
         badArithmetics  = 0x1E,
         induced         = 0x1F,

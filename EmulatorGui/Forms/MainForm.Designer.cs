@@ -62,6 +62,7 @@
             this.lbClearMemory = new System.Windows.Forms.Label();
             this.tbClearFrom = new System.Windows.Forms.TextBox();
             this.groupOptions = new System.Windows.Forms.GroupBox();
+            this.lbInterrupt = new System.Windows.Forms.Label();
             this.btnStopExec = new System.Windows.Forms.Button();
             this.btnExecuteUntil = new System.Windows.Forms.Button();
             this.lbExecuteUntil = new System.Windows.Forms.Label();
@@ -143,9 +144,9 @@
             // btnStep
             // 
             this.btnStep.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnStep.Location = new System.Drawing.Point(6, 377);
+            this.btnStep.Location = new System.Drawing.Point(6, 356);
             this.btnStep.Name = "btnStep";
-            this.btnStep.Size = new System.Drawing.Size(186, 22);
+            this.btnStep.Size = new System.Drawing.Size(188, 22);
             this.btnStep.TabIndex = 1;
             this.btnStep.TabStop = false;
             this.btnStep.UseVisualStyleBackColor = true;
@@ -390,6 +391,7 @@
             // 
             // groupOptions
             // 
+            this.groupOptions.Controls.Add(this.lbInterrupt);
             this.groupOptions.Controls.Add(this.btnStopExec);
             this.groupOptions.Controls.Add(this.btnExecuteUntil);
             this.groupOptions.Controls.Add(this.lbExecuteUntil);
@@ -424,6 +426,16 @@
             this.groupOptions.TabIndex = 11;
             this.groupOptions.TabStop = false;
             this.groupOptions.Text = "Opcije";
+            // 
+            // lbInterrupt
+            // 
+            this.lbInterrupt.AutoSize = true;
+            this.lbInterrupt.ForeColor = System.Drawing.Color.Gray;
+            this.lbInterrupt.Location = new System.Drawing.Point(6, 381);
+            this.lbInterrupt.Name = "lbInterrupt";
+            this.lbInterrupt.Size = new System.Drawing.Size(91, 14);
+            this.lbInterrupt.TabIndex = 38;
+            this.lbInterrupt.Text = "Prekid: none";
             // 
             // btnStopExec
             // 
@@ -563,5 +575,6 @@
         private TextBox tbExecuteUntil;
         private Button btnExecuteUntil;
         private Button btnStopExec;
+        private Label lbInterrupt;
     }
 }

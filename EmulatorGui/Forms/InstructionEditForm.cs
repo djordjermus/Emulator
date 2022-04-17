@@ -95,7 +95,6 @@ namespace EmulatorGui {
             OpCode code = (OpCode)cbInstruction.SelectedItem;
             uint count = (uint)numOpCount.Value;
 
-            Instruction ins = new Instruction();
             bool success = true;
             ushort op1 = 0, op2 = 0, op3 = 0;
 
@@ -106,6 +105,7 @@ namespace EmulatorGui {
             // Return if unparsable operands given
             if (Assert.IfFalse(success)) return false;
 
+            Instruction ins = new Instruction();
             if (count == 0)
                 ins = new Instruction(code);
             else if (count == 1)

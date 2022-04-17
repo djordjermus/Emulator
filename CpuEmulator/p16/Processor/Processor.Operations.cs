@@ -25,11 +25,10 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
-            if (success) { 
-                _onExecute();
+            if (success) 
                 return Interrupt.none;
-            } 
-            else return Interrupt.badRegister;
+            else
+                return Interrupt.badRegister;
         }
         Interrupt OpStore(OpCode code, ushort a1, ushort v2) {
             uint wr = 0;
@@ -49,11 +48,10 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
-            if (wr != 0) {
-                _onExecute();
+            if (wr != 0) 
                 return Interrupt.none;
-            }
-            return Interrupt.badAddress;
+            else
+                return Interrupt.badAddress;
         }
         Interrupt OpPush(OpCode code, ushort v1) {
             uint add = 0;
@@ -79,29 +77,27 @@ namespace CpuEmulator.p16 {
             Set(IX_SP, (ushort)(_reg[IX_SP] + add));
             if(_reg[IX_SP] > _reg[IX_SB]) return Interrupt.stackoverflow;
 
-            _onExecute();
             return Interrupt.none;
         }
         Interrupt OpPop(OpCode code, ushort r1) {
             if(!ValidRegister(r1)) return Interrupt.badRegister;
 
             uint   sub  = 0;
-            ushort read = 0;
 
             switch (code) {
                 case OpCode.pop: 
-                    sub = Memory.Read(this[IX_SP], out read);
+                    sub = Memory.Read(this[IX_SP] - 2u, out ushort read);
                     Set(r1, read);
                     break;
 
                 case OpCode.popub:
-                    sub = Memory.Read(this[IX_SP], out read);
-                    Set(r1, (ushort)read);
+                    sub = Memory.Read(this[IX_SP] - 1u, out byte readub);
+                    Set(r1, (ushort)readub);
                     
                     break;
                 case OpCode.popsb:
-                    sub = Memory.Read(this[IX_SP], out read);
-                    Set(r1, (ushort)(short)read);
+                    sub = Memory.Read(this[IX_SP] - 1u, out sbyte readsb);
+                    Set(r1, (ushort)(short)readsb);
                     break;
 
                 default:
@@ -113,7 +109,6 @@ namespace CpuEmulator.p16 {
             Set(IX_SP, (ushort)(_reg[IX_SP] - sub));
             if (_reg[IX_SP] > _reg[IX_SB]) return Interrupt.stackunderflow;
 
-            _onExecute();
             return Interrupt.none;
         }
         Interrupt OpArithmetic(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
@@ -125,28 +120,31 @@ namespace CpuEmulator.p16 {
                 case OpCode.add:
                     if (opct < 2) return Interrupt.badInstruction;
                     Set(r1, (ushort)(v2 + v3));
+                    OpTestAdd(v2, v3, (ushort)(v2 + v3));
                     break;
 
                 case OpCode.sub:
                     if (opct < 2) return Interrupt.badInstruction;
                     Set(r1, (ushort)(v2 - v3));
+                    OpTestSub(v2, v3, (ushort)(v2 - v3));
                     break;
 
                 case OpCode.mul:
                     if (opct < 2) return Interrupt.badInstruction;
                     Set(r1, (ushort)(v2 * v3));
+                    OpTest((ushort)(v2 * v3));
                     break;
 
                 case OpCode.div:
                     if (opct < 2) return Interrupt.badInstruction;
                     if (v3 == 0) return Interrupt.badArithmetics; // DIV BY ZERO
                     Set(r1, (ushort)(v2 / v3));
+                    OpTest((ushort)(v2 * v3));
                     break;
 
                 default:
                     return Interrupt.badInstruction;
             }
-            _onExecute();
             return Interrupt.none;
         }
         Interrupt OpBitwise(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
@@ -182,7 +180,7 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
-            _onExecute();
+            OpTest((ushort)(v2 * v3));
             return Interrupt.none;
         }
         Interrupt OpLogical(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
@@ -212,7 +210,7 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
-            _onExecute();
+            OpTest((ushort)(v2 * v3));
             return Interrupt.none;
         }
         Interrupt OpComparison(OpCode code, ushort r1, ushort v2, ushort v3, ushort opct) {
@@ -246,7 +244,7 @@ namespace CpuEmulator.p16 {
                     Set(r1, ToNum((short)v2 < (short)v3));
                     break;
             }
-            _onExecute();
+            OpTest((ushort)(v2 * v3));
             return Interrupt.none;
         }
         Interrupt OpJump(OpCode code, ushort a1, ushort v2, ushort v3, ushort opct) {
@@ -283,10 +281,35 @@ namespace CpuEmulator.p16 {
                 default:
                     return Interrupt.badInstruction;
             }
-            _onExecute();
             return Interrupt.none;
         }
-        
+        Interrupt OpTest(ushort value) {
+            ZeroFlag = value == 0;
+            SignFlag = (value >> 15) == 1;
+            return Interrupt.none;
+        }
+        Interrupt OpTestAdd(ushort lhs, ushort rhs, ushort result) {
+            OpTest(result);
+            CarryFlag = result < (lhs + rhs);
+
+            short res = (short)result;
+            short l   = (short)lhs;
+            short r   = (short)rhs;
+            OverflowFlag =
+                (l > 0 && r > 0 && res < 0) || (l < 0 && r < 0 && res > 0);
+            return Interrupt.none;
+        }
+        Interrupt OpTestSub(ushort lhs, ushort rhs, ushort result) {
+            OpTest(result);
+            CarryFlag = result > (lhs - rhs);
+
+            short res = (short)result;
+            short l   = (short)lhs;
+            short r   = (short)rhs;
+            OverflowFlag = 
+                (l > 0 && r < 0 && res < 0) || (l < 0 && r > 0 && res > 0);
+            return Interrupt.none;
+        }
         void Convert(ushort opct, ref ushort r1, ref ushort v2, ref ushort v3) { 
             if (opct == 2) { v3 = v2; Get(r1, out v2); }
         }

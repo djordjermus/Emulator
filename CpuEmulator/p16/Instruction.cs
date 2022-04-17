@@ -38,7 +38,7 @@ namespace CpuEmulator.p16 {
             Mode mode2, ushort operand2,
             Mode mode3, ushort operand3) {
             Operation = code;
-            OpCount   = 2;
+            OpCount   = 3;
 
             Mode1 = mode1; Operand1 = operand1;
             Mode2 = mode2; Operand2 = operand2;

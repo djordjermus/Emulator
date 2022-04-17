@@ -19,7 +19,7 @@ namespace CpuEmulator {
         public uint Capacity => (uint)_data.Length;
         public bool CanAccess(uint address) => 
             address < _data.Length;
-        public bool CanAccessRange(uint address, uint bytes) => 
+        public bool CanAccess(uint address, uint bytes) => 
             (address + bytes) <= _data.Length;
         
         //
@@ -93,13 +93,13 @@ namespace CpuEmulator {
             output = 0;
             return 0u;
         }
-        public uint Read(uint address, uint bytes, out byte[]? output) {
+        public uint Read(uint address, uint bytes, out byte[] output) {
             if (bytes == 0) { 
-                output = null; 
+                output = Array.Empty<byte>(); 
                 return 0; 
             }
             if (address >= _data.Length) { 
-                output = null;
+                output = Array.Empty<byte>();
                 return 0;
             }
 

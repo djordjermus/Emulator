@@ -13,7 +13,7 @@ namespace EmulatorGui {
         public CpuEmulator.Memory Memory { get; set; }
         public uint Address { get; set; }
         public override string ToString() {
-            if (!Memory.CanAccessRange(Address, 2))
+            if (!Memory.CanAccess(Address, 2))
                 return "N/A";
 
             StringBuilder builder = new StringBuilder(30);

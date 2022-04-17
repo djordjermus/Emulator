@@ -31,6 +31,52 @@ namespace CpuEmulator.p16 {
             return false;
         }
 
+        public bool CarryFlag     { 
+            get => (_reg[IX_ST] & 0b00000001) == 1;
+            set {
+                if (value) 
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000001);
+                else 
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00000001);
+            }
+        }
+        public bool ZeroFlag      { 
+            get => (_reg[IX_ST] & 0b00000010) == 1;
+            set {
+                if (value)
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000010);
+                else
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00000010);
+            }
+        }
+        public bool SignFlag      { 
+            get => (_reg[IX_ST] & 0b00000100) == 1;
+            set {
+                if (value)
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000100);
+                else
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00000100);
+            }
+        }
+        public bool OverflowFlag  { 
+            get => (_reg[IX_ST] & 0b00001000) == 1;
+            set {
+                if (value)
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00001000);
+                else
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00001000);
+            }
+        }
+        public bool InterruptFlag { 
+            get => (_reg[IX_ST] & 0b00010000) == 1;
+            set {
+                if (value)
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00010000);
+                else
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00010000);
+            }
+        }
+
         ushort[]    _reg = new ushort[32];
         public const uint IX_GPR0 = 0x00; // GENERAL PURPOSE REGISTER #1
         public const uint IX_GPR1 = 0x01; // GENERAL PURPOSE REGISTER #2
@@ -56,7 +102,7 @@ namespace CpuEmulator.p16 {
 
         public const uint IX_SP   = 0x14; // STACK POINTER
         public const uint IX_SB   = 0x15; // STACK BOUNDS
-        public const uint IX_ST   = 0x16; // STATE (UNUSED)
+        public const uint IX_ST   = 0x16; // STATE
         public const uint IX_PC   = 0x17; // PROGRAM COUNTER
 
         public const uint IX_IRR0 = 0x18; // Interrupt #1 (STACK OVERFLOW)

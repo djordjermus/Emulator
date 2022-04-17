@@ -24,9 +24,6 @@ namespace EmulatorGui {
             InitializeInstructionView();
             RefreshCapacityLabel();
 
-            // Subscribe to processor
-            _processor.OnExecute += RefreshDisplay;
-
             UpdateStepButton();
         }
 
@@ -297,6 +294,9 @@ namespace EmulatorGui {
             RefreshListBox(lbInstructions);
             SelectPCInstruction();
         }
+        private void SetInterruptText(Interrupt interrupt) {
+            lbInterrupt.Text = $"Prekid: {interrupt}";
+        }
         private void lbInstructions_DoubleClick(object sender, EventArgs e) {
             if (Assert.IfFalse(!_executing, _reasonExecuting)) return;
             InstructionView view = (lbInstructions.SelectedItem as InstructionView)!;
@@ -417,8 +417,8 @@ namespace EmulatorGui {
 
             msLoad.Enabled          = true;
             msReload.Enabled        = _load.FileName != "";
-            msSaveAs.Enabled          = true;
-            msSave.Enabled        = _save.FileName != "";
+            msSaveAs.Enabled        = true;
+            msSave.Enabled          = _save.FileName != "";
 
             btnStopExec.Enabled     = false;
             RefreshDisplay();
@@ -426,12 +426,10 @@ namespace EmulatorGui {
         
         private void btnStep_Click(object sender, EventArgs e) {
             if (Assert.IfFalse(!_executing)) return;
-            _processor.HandleInterrupt(_processor.Execute());
-            UpdateStepButton();
-            RefreshListBox(lbRegisters);
-            RefreshListBox(lbMemory);
-            RefreshListBox(lbInstructions);
-            SelectPCInstruction();
+            Interrupt ir = _processor.Execute();
+            _processor.HandleInterrupt(ir);
+            SetInterruptText(ir);
+            RefreshDisplay();
         }
         private void btnExecuteUntil_Click(object sender, EventArgs e) {
             if (Assert.IfFalse(!_executing)) return;

@@ -1,3 +1,5 @@
+Ova grana je predstavlja projakt kakav je bio urađen za seminarski aprila 2022
+
 Aplikacija i biblioteka zahtevaju dotNet6 runtime za desktop:<br>
 https://dotnet.microsoft.com/en-us/download/dotnet/6.0<br>
 Izgradjenu aplikaciju i biblioteku možete naći ovde:<br>

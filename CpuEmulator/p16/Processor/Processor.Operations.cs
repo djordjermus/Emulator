@@ -284,30 +284,35 @@ namespace CpuEmulator.p16 {
             return Interrupt.none;
         }
         Interrupt OpTest(ushort value) {
-            ZeroFlag = value == 0;
-            SignFlag = (value >> 15) == 1;
+            SetFlag(IX_ZF, value == 0);
+            SetFlag(IX_SF, (value >> 15) == 1);
+
             return Interrupt.none;
         }
         Interrupt OpTestAdd(ushort lhs, ushort rhs, ushort result) {
             OpTest(result);
-            CarryFlag = result < (lhs + rhs);
+            SetFlag(IX_CF, result < (lhs + rhs));
 
             short res = (short)result;
             short l   = (short)lhs;
             short r   = (short)rhs;
-            OverflowFlag =
-                (l > 0 && r > 0 && res < 0) || (l < 0 && r < 0 && res > 0);
+            SetFlag(
+                IX_OF,
+                (l > 0 && r > 0 && res < 0) || (l < 0 && r < 0 && res > 0));
+
             return Interrupt.none;
         }
         Interrupt OpTestSub(ushort lhs, ushort rhs, ushort result) {
             OpTest(result);
-            CarryFlag = result > (lhs - rhs);
+            SetFlag(IX_CF, result > (lhs - rhs));
 
             short res = (short)result;
             short l   = (short)lhs;
             short r   = (short)rhs;
-            OverflowFlag = 
-                (l > 0 && r < 0 && res < 0) || (l < 0 && r > 0 && res > 0);
+            SetFlag(
+                IX_OF,
+                (l > 0 && r < 0 && res < 0) || (l < 0 && r > 0 && res > 0));
+
             return Interrupt.none;
         }
         void Convert(ushort opct, ref ushort r1, ref ushort v2, ref ushort v3) { 

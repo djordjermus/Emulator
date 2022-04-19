@@ -23,12 +23,11 @@ namespace EmulatorGui {
                 // Populate view list
                 uint readPtr = address;
                 for (int i = 0; i < count; i++) {
-
-                    // Read instruction
-                    uint readb = EncoderDecoder.Decode(
+                // Read instruction
+                    Instruction instruction = new Instruction();
+                    uint readb = instruction.Decode(
                         memory,
-                        readPtr,
-                        out Instruction instruction);
+                        readPtr);
 
                     // Create view
                     InstructionView view = new InstructionView(memory, readPtr);
@@ -46,11 +45,11 @@ namespace EmulatorGui {
         }
         public Instruction Instruction {
             get {
-                EncoderDecoder.Decode(_memory, _address, out Instruction instr);
-                return instr;
+
+                return new Instruction(_memory, _address);
             }
             set {
-                EncoderDecoder.Encode(_memory, _address, ref value);
+                value.Encode(_memory, _address);
             }
         }
         public Memory Memory {
@@ -58,7 +57,7 @@ namespace EmulatorGui {
             set => _memory = value;
         }
         public override string ToString() {
-            EncoderDecoder.Decode(_memory, _address, out Instruction instr);
+            Instruction instr = new Instruction(_memory, _address);
 
             StringBuilder builder = new StringBuilder(40);
             OpCode opcode = instr.Operation;

@@ -71,7 +71,7 @@ namespace EmulatorGui {
         }
 
         void Decode() =>
-            EncoderDecoder.Decode(_memory, _address, out _instruction);
+            new Instruction(_memory, _address);
         
         void Present() {
             OpCode code = _instruction.Operation;
@@ -127,10 +127,9 @@ namespace EmulatorGui {
                 Assert.IfFalse(false);
                 return false;
             }
-            EncoderDecoder.Encode(
+            ins.Encode(
                 _memory,
-                _address,
-                ref ins);
+                _address);
             return true;
         }
         void PresentOperand(int i, Mode mode, ushort value) {

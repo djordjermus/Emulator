@@ -193,10 +193,8 @@ namespace EmulatorGui {
             List<InstructionView> views = new List<InstructionView>(32);
             _processor.Get(Processor.IX_PC, out ushort addr);
             for (int i = 0; i < 32; i++) {
-                uint width = EncoderDecoder.Decode(
-                    _processor.Memory, 
-                    addr, 
-                    out Instruction ins);
+                Instruction ins = new();
+                uint width = ins.Decode(_processor.Memory, addr);
             
                 views.Add(new InstructionView(_processor.Memory, addr));
 
@@ -210,10 +208,10 @@ namespace EmulatorGui {
 
             ushort addr = startAddr;
             for (int i = 0; i < views.Count; i++) {
-                uint width = EncoderDecoder.Decode(
+                Instruction ins = new();
+                uint width = ins.Decode(
                     _processor.Memory,
-                    addr,
-                    out Instruction ins);
+                    addr);
 
                 views[i].Address     = addr;
                 views[i].Instruction = ins;

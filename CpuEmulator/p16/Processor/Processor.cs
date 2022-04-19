@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CpuEmulator.p16 {
-    using EncDec = EncoderDecoder;
     public partial class Processor {
 
         public Processor(Memory memory) {
@@ -13,7 +12,7 @@ namespace CpuEmulator.p16 {
             Memory        = memory;
 
             // Enable interrupts
-            InterruptFlag = true;
+            SetFlag(IX_IF, true);
         }
         public Memory Memory { get; set; }
 
@@ -25,8 +24,10 @@ namespace CpuEmulator.p16 {
         // Fetches next instruction, advances PC
         // !!!Does not handle interrupt!!!
         public Interrupt Fetch(out Instruction instruction) {
+            instruction = new Instruction();
+
             // READ INSTRUCTION
-            ushort len = (ushort)EncDec.Decode(Memory, _reg[IX_PC], out instruction);
+            ushort len = (ushort)instruction.Decode(Memory, _reg[IX_PC]);
 
             // FAILIURE TO READ INSTRUCTION
             if (len != (2 + instruction.OpCount * 2))
@@ -268,7 +269,8 @@ namespace CpuEmulator.p16 {
         // Handles given interrupt if its valid
         // Returns true if interrupt is handled, otherwise false
         public bool HandleInterrupt(Interrupt i) {
-            if ((int)i >= IX_IRR0 && (int)i <= IX_IRR7 && InterruptFlag) {
+            
+            if ((int)i >= IX_IRR0 && (int)i <= IX_IRR7 && GetFlag(IX_IF)) {
                 ushort new_pc = _reg[(int)i];
 
                 if(new_pc != 0)

@@ -7,75 +7,57 @@ using System.Threading.Tasks;
 namespace CpuEmulator.p16 {
     public partial class Processor {
         public ushort this[uint ix] {
-            get {
-                Get(ix, out ushort ret);
-                return ret;
-            }
-            set { 
-                Set(ix, value);
-            }
+            get => (ushort)(Get(ix, out ushort ret) ? ret : 0);
+            set => Set(ix, value);
         }
         public bool Set(uint ix, ushort value) {
-            if (ix < 32) { 
+            if (ValidRegister(ix)) { 
                 _reg[ix] = value;
                 return true;
             }
             return false;
         }
         public bool Get(uint ix, out ushort output) {
-            if (ix < 32) {
+            if (ValidRegister(ix)) {
                 output = _reg[ix];
                 return true;
             }
             output = 0;
             return false;
         }
-
-        public bool CarryFlag     { 
-            get => (_reg[IX_ST] & 0b00000001) != 0;
-            set {
-                if (value) 
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000001);
+        public bool SetFlag(uint ix) {
+            if (ix < 8) { 
+                _reg[IX_ST] = (ushort)(_reg[IX_ST] | (1 << (int)ix));
+                return true;
+            }
+            return false;
+        }
+        public bool SetFlag(uint ix, bool value) {
+            if (ix < 8) {
+                if(value)
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] | (1 << (int)ix));
                 else 
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00000001);
+                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~(1 << (int)ix));
+                return true;
             }
+            return false;
         }
-        public bool ZeroFlag      { 
-            get => (_reg[IX_ST] & 0b00000010) != 0;
-            set {
-                if (value)
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000010);
-                else
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00000010);
+        public bool ResetFlag(uint ix) {
+            if (ix < 8) {
+                _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~(1 << (int)ix));
+                return true;
             }
+            return false;
         }
-        public bool SignFlag      { 
-            get => (_reg[IX_ST] & 0b00000100) != 0;
-            set {
-                if (value)
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00000100);
-                else
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00000100);
+        public bool InvertFlag(uint ix) {
+            if (ix < 8) {
+                _reg[IX_ST] = (ushort)(_reg[IX_ST] ^ (1 << (int)ix));
+                return true;
             }
+            return false;
         }
-        public bool OverflowFlag  { 
-            get => (_reg[IX_ST] & 0b00001000) != 0;
-            set {
-                if (value)
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00001000);
-                else
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00001000);
-            }
-        }
-        public bool InterruptFlag { 
-            get => (_reg[IX_ST] & 0b00010000) != 0;
-            set {
-                if (value)
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] |  0b00010000);
-                else
-                    _reg[IX_ST] = (ushort)(_reg[IX_ST] & ~0b00010000);
-            }
-        }
+        public bool GetFlag(uint ix) => 
+            (_reg[IX_ST] & (1 << (int)ix)) != 0;
 
         ushort[]    _reg = new ushort[32];
         public const uint IX_GPR0 = 0x00; // GENERAL PURPOSE REGISTER #1
@@ -113,5 +95,11 @@ namespace CpuEmulator.p16 {
         public const uint IX_IRR5 = 0x1D; // Interrupt #6 (BAD INSTRUCTION)
         public const uint IX_IRR6 = 0x1E; // Interrupt #7 (BAD ARITHMETICS)
         public const uint IX_IRR7 = 0x1F; // Interrupt #8 (INDUCED)
+
+        public const uint IX_CF = 0; // Carry flag index
+        public const uint IX_ZF = 1; // Zero flag index
+        public const uint IX_SF = 2; // Sign flag index
+        public const uint IX_OF = 3; // Overflow flag index
+        public const uint IX_IF = 4; // Interrupt flag index
     }
 }

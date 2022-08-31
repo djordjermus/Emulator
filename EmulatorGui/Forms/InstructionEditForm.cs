@@ -71,7 +71,7 @@ namespace EmulatorGui {
         }
 
         void Decode() =>
-            new Instruction(_memory, _address);
+            _instruction = new Instruction(_memory, _address);
         
         void Present() {
             OpCode code = _instruction.Operation;
